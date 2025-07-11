@@ -6,10 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Book, MessageSquare, Send, Bot, Loader2 } from "lucide-react";
+import { Book, MessageSquare, Send, Bot, Loader2, CalendarCheck, Film } from "lucide-react";
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
 
 export default function StudentPage() {
   const [question, setQuestion] = useState("");
@@ -19,16 +21,28 @@ export default function StudentPage() {
   const courses = [
     {
       title: "Introduction to Algebra",
-      content: "Module 1: Variables and Expressions\nModule 2: Solving Linear Equations\nModule 3: Graphing Functions",
+      modules: [
+        { name: "Variables and Expressions", videoUrl: "https://placehold.co/1280x720.mp4" },
+        { name: "Solving Linear Equations", videoUrl: "https://placehold.co/1280x720.mp4" },
+        { name: "Graphing Functions", videoUrl: "https://placehold.co/1280x720.mp4" },
+      ],
     },
     {
       title: "World History: Ancient Civilizations",
-      content: "Module 1: Mesopotamia\nModule 2: Ancient Egypt\nModule 3: The Roman Empire",
+      modules: [
+        { name: "Mesopotamia", videoUrl: "https://placehold.co/1280x720.mp4" },
+        { name: "Ancient Egypt", videoUrl: "https://placehold.co/1280x720.mp4" },
+        { name: "The Roman Empire", videoUrl: "https://placehold.co/1280x720.mp4" },
+      ],
     },
-    {
-      title: "Fundamentals of Biology",
-      content: "Module 1: Cell Structure\nModule 2: Photosynthesis\nModule 3: Genetics",
-    },
+  ];
+  
+  const attendance = [
+    { date: "2024-07-22", status: "Present" },
+    { date: "2024-07-21", status: "Present" },
+    { date: "2024-07-20", status: "Absent" },
+    { date: "2024-07-19", status: "Present" },
+    { date: "2024-07-18", status: "Late" },
   ];
 
   const handleQuestionSubmit = (e: React.FormEvent) => {
@@ -50,8 +64,9 @@ export default function StudentPage() {
   return (
     <DashboardPage title="Student Dashboard" role="Student">
       <Tabs defaultValue="courses">
-        <TabsList className="mb-6">
-          <TabsTrigger value="courses"><Book className="mr-2 h-4 w-4" />Course Materials</TabsTrigger>
+        <TabsList className="mb-6 grid grid-cols-1 sm:grid-cols-3 w-full sm:w-auto">
+          <TabsTrigger value="courses"><Book className="mr-2 h-4 w-4" />My Courses</TabsTrigger>
+          <TabsTrigger value="attendance"><CalendarCheck className="mr-2 h-4 w-4" />Attendance</TabsTrigger>
           <TabsTrigger value="qna"><MessageSquare className="mr-2 h-4 w-4" />Ask a Question</TabsTrigger>
         </TabsList>
 
@@ -59,7 +74,7 @@ export default function StudentPage() {
           <Card>
             <CardHeader>
               <CardTitle>My Courses</CardTitle>
-              <CardDescription>Access your enrolled courses and materials here. (Simulated Data)</CardDescription>
+              <CardDescription>Access your enrolled courses, modules, and video lectures here.</CardDescription>
             </CardHeader>
             <CardContent>
               <Accordion type="single" collapsible className="w-full">
@@ -67,11 +82,58 @@ export default function StudentPage() {
                   <AccordionItem value={`item-${index}`} key={index}>
                     <AccordionTrigger className="text-lg font-medium">{course.title}</AccordionTrigger>
                     <AccordionContent>
-                      <pre className="p-4 bg-muted/50 rounded-md whitespace-pre-wrap font-sans">{course.content}</pre>
+                      <div className="space-y-4">
+                        {course.modules.map((module, moduleIndex) => (
+                            <Card key={moduleIndex}>
+                               <CardHeader>
+                                    <CardTitle className="text-base flex items-center gap-2">
+                                        <Film className="h-5 w-5 text-primary" />
+                                        {module.name}
+                                    </CardTitle>
+                               </CardHeader>
+                               <CardContent>
+                                    <div className="aspect-video bg-muted rounded-md flex items-center justify-center">
+                                       <p className="text-muted-foreground">Video player placeholder</p>
+                                    </div>
+                               </CardContent>
+                            </Card>
+                        ))}
+                      </div>
                     </AccordionContent>
                   </AccordionItem>
                 ))}
               </Accordion>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="attendance">
+          <Card>
+            <CardHeader>
+              <CardTitle>My Attendance</CardTitle>
+              <CardDescription>Here is a summary of your attendance record. (Simulated)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-right">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {attendance.map((record) => (
+                    <TableRow key={record.date}>
+                      <TableCell className="font-medium">{record.date}</TableCell>
+                      <TableCell className="text-right">
+                        <Badge variant={record.status === "Present" ? "secondary" : record.status === "Absent" ? "destructive" : "default"}>
+                          {record.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>
