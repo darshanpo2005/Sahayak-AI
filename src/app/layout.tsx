@@ -25,10 +25,13 @@ export default function RootLayout({
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
-          fontVariable={inter.variable}
         >
-          {children}
-          <Toaster />
+          <div className={inter.variable}>
+            <div className="flex flex-col min-h-screen bg-background">
+              {children}
+            </div>
+            <Toaster />
+          </div>
         </ThemeProvider>
       </body>
     </html>

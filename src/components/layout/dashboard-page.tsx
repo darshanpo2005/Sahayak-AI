@@ -34,7 +34,7 @@ export function DashboardPage({ children, title, role }: DashboardPageProps) {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <>
       <header className="sticky top-0 z-10 flex items-center justify-between h-16 px-4 border-b bg-background/80 backdrop-blur-sm sm:px-6">
         <div className="flex items-center gap-4">
           <Link href="/" className="flex items-center gap-2">
@@ -98,6 +98,6 @@ export function DashboardPage({ children, title, role }: DashboardPageProps) {
           {children}
         </div>
       </main>
-    </div>
+    </>
   );
 }
