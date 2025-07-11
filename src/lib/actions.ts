@@ -36,7 +36,7 @@ export async function getLessonPlan(input: GenerateLessonPlanAssistanceInput): P
   try {
     const result = await generateLessonPlanAssistance(input);
     return { success: true, data: result };
-  } catch (error) => {
+  } catch (error) {
     console.error("Error generating lesson plan:", error);
     return { success: false, error: "An unexpected error occurred while generating the lesson plan." };
   }
