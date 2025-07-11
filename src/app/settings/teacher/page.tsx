@@ -7,10 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Bell, Clock, Lock } from "lucide-react";
+import { Bell, Lock, Palette, Moon, Sun, Monitor } from "lucide-react";
+import { useTheme } from "next-themes";
 
 export default function TeacherSettingsPage() {
   const { toast } = useToast();
+  const { setTheme } = useTheme();
 
   const handleSaveChanges = (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,6 +26,26 @@ export default function TeacherSettingsPage() {
     <DashboardPage title="Settings" role="Teacher">
       <form onSubmit={handleSaveChanges}>
         <div className="grid gap-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Palette /> Theme</CardTitle>
+              <CardDescription>Choose how Sahayak AI looks and feels.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-4">
+                <Button variant="outline" className="flex flex-col h-auto py-4" onClick={() => setTheme("light")}>
+                  <Sun className="mb-2" /> Light
+                </Button>
+                <Button variant="outline" className="flex flex-col h-auto py-4" onClick={() => setTheme("dark")}>
+                  <Moon className="mb-2" /> Dark
+                </Button>
+                <Button variant="outline" className="flex flex-col h-auto py-4" onClick={() => setTheme("system")}>
+                  <Monitor className="mb-2" /> System
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><Bell /> Notifications</CardTitle>
