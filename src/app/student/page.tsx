@@ -12,15 +12,22 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
+import { getTutorResponse } from "@/lib/actions";
+
+type ChatMessage = {
+  author: "user" | "bot";
+  message: string;
+};
 
 export default function StudentPage() {
   const [question, setQuestion] = useState("");
-  const [chatHistory, setChatHistory] = useState<{ author: "user" | "bot"; message: string }[]>([]);
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [isAnswering, setIsAnswering] = useState(false);
 
   const courses = [
     {
       title: "Introduction to Algebra",
+      topic: "Algebra",
       modules: [
         { name: "Variables and Expressions", videoUrl: "https://placehold.co/1280x720.mp4" },
         { name: "Solving Linear Equations", videoUrl: "https://placehold.co/1280x720.mp4" },
@@ -29,6 +36,7 @@ export default function StudentPage() {
     },
     {
       title: "World History: Ancient Civilizations",
+      topic: "World History",
       modules: [
         { name: "Mesopotamia", videoUrl: "https://placehold.co/1280x720.mp4" },
         { name: "Ancient Egypt", videoUrl: "https://placehold.co/1280x720.mp4" },
@@ -36,6 +44,8 @@ export default function StudentPage() {
       ],
     },
   ];
+
+  const [activeCourseTopic, setActiveCourseTopic] = useState(courses[0].topic);
   
   const attendance = [
     { date: "2024-07-22", status: "Present" },
@@ -45,20 +55,28 @@ export default function StudentPage() {
     { date: "2024-07-18", status: "Late" },
   ];
 
-  const handleQuestionSubmit = (e: React.FormEvent) => {
+  const handleQuestionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!question.trim()) return;
 
-    const newHistory = [...chatHistory, { author: "user" as const, message: question }];
+    const newHistory: ChatMessage[] = [...chatHistory, { author: "user", message: question }];
     setChatHistory(newHistory);
+    const currentQuestion = question;
     setQuestion("");
     setIsAnswering(true);
 
-    setTimeout(() => {
-      const cannedResponse = "This is a simulated response from Sahayak AI. In a full application, I would provide a detailed answer based on your course materials. For example, Photosynthesis is the process used by plants, algae, and certain bacteria to harness energy from sunlight and turn it into chemical energy.";
-      setChatHistory([...newHistory, { author: "bot" as const, message: cannedResponse }]);
-      setIsAnswering(false);
-    }, 1500);
+    const result = await getTutorResponse({
+      question: currentQuestion,
+      topic: activeCourseTopic,
+      history: chatHistory.map(chat => ({ role: chat.author === 'user' ? 'user' : 'model', content: chat.message })),
+    });
+
+    if (result.success) {
+      setChatHistory([...newHistory, { author: "bot", message: result.data.answer }]);
+    } else {
+      setChatHistory([...newHistory, { author: "bot", message: `Sorry, I encountered an error: ${result.error}` }]);
+    }
+    setIsAnswering(false);
   };
 
   return (
@@ -67,7 +85,7 @@ export default function StudentPage() {
         <TabsList className="mb-6 grid grid-cols-1 sm:grid-cols-3 w-full sm:w-auto">
           <TabsTrigger value="courses"><Book className="mr-2 h-4 w-4" />My Courses</TabsTrigger>
           <TabsTrigger value="attendance"><CalendarCheck className="mr-2 h-4 w-4" />Attendance</TabsTrigger>
-          <TabsTrigger value="qna"><MessageSquare className="mr-2 h-4 w-4" />Ask a Question</TabsTrigger>
+          <TabsTrigger value="qna"><MessageSquare className="mr-2 h-4 w-4" />AI Tutor</TabsTrigger>
         </TabsList>
 
         <TabsContent value="courses">
@@ -77,7 +95,10 @@ export default function StudentPage() {
               <CardDescription>Access your enrolled courses, modules, and video lectures here.</CardDescription>
             </CardHeader>
             <CardContent>
-              <Accordion type="single" collapsible className="w-full">
+              <Accordion type="single" collapsible className="w-full" onValueChange={(value) => {
+                const courseIndex = parseInt(value.split('-')[1]);
+                setActiveCourseTopic(courses[courseIndex].topic);
+              }}>
                 {courses.map((course, index) => (
                   <AccordionItem value={`item-${index}`} key={index}>
                     <AccordionTrigger className="text-lg font-medium">{course.title}</AccordionTrigger>
@@ -141,8 +162,8 @@ export default function StudentPage() {
         <TabsContent value="qna">
           <Card className="h-[600px] flex flex-col">
             <CardHeader>
-              <CardTitle>Ask a Question</CardTitle>
-              <CardDescription>Get help with your course content from Sahayak AI. (Simulated Response)</CardDescription>
+              <CardTitle>AI Tutor</CardTitle>
+              <CardDescription>Get help with your course content. Currently selected: <span className="font-semibold text-primary">{activeCourseTopic}</span></CardDescription>
             </CardHeader>
             <CardContent className="flex-grow overflow-hidden">
                 <ScrollArea className="h-full pr-4">
@@ -154,7 +175,7 @@ export default function StudentPage() {
                           <AvatarFallback><Bot /></AvatarFallback>
                         </Avatar>
                       )}
-                       <div className={`rounded-lg px-4 py-2 max-w-[75%] ${chat.author === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                       <div className={`rounded-lg px-4 py-2 max-w-[85%] whitespace-pre-wrap font-sans text-sm ${chat.author === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                         <p>{chat.message}</p>
                       </div>
                     </div>
@@ -177,7 +198,7 @@ export default function StudentPage() {
                 <Input
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
-                  placeholder="Ask about your course..."
+                  placeholder={`Ask about ${activeCourseTopic}...`}
                   disabled={isAnswering}
                 />
                 <Button type="submit" disabled={isAnswering}>
