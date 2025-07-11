@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +14,9 @@ import { useTheme } from "next-themes";
 export default function TeacherSettingsPage() {
   const { toast } = useToast();
   const { setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
 
   const handleSaveChanges = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,17 +36,19 @@ export default function TeacherSettingsPage() {
               <CardDescription>Choose how Sahayak AI looks and feels.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 gap-4">
-                <Button variant="outline" className="flex flex-col h-auto py-4" onClick={() => setTheme("light")}>
-                  <Sun className="mb-2" /> Light
-                </Button>
-                <Button variant="outline" className="flex flex-col h-auto py-4" onClick={() => setTheme("dark")}>
-                  <Moon className="mb-2" /> Dark
-                </Button>
-                <Button variant="outline" className="flex flex-col h-auto py-4" onClick={() => setTheme("system")}>
-                  <Monitor className="mb-2" /> System
-                </Button>
-              </div>
+              {mounted && (
+                <div className="grid grid-cols-3 gap-4">
+                  <Button variant="outline" className="flex flex-col h-auto py-4" type="button" onClick={() => setTheme("light")}>
+                    <Sun className="mb-2" /> Light
+                  </Button>
+                  <Button variant="outline" className="flex flex-col h-auto py-4" type="button" onClick={() => setTheme("dark")}>
+                    <Moon className="mb-2" /> Dark
+                  </Button>
+                  <Button variant="outline" className="flex flex-col h-auto py-4" type="button" onClick={() => setTheme("system")}>
+                    <Monitor className="mb-2" /> System
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 
