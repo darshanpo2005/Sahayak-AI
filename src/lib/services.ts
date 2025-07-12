@@ -170,6 +170,14 @@ export const getCoursesForStudent = async (studentId: string): Promise<Course[]>
     return mockCourses.filter(c => c.teacherId === student.teacherId);
 }
 
+export const updateCourse = async (id: string, updates: Partial<Course>): Promise<Course | null> => {
+  await delay(300);
+  const courseIndex = mockCourses.findIndex(c => c.id === id);
+  if (courseIndex === -1) return null;
+  mockCourses[courseIndex] = { ...mockCourses[courseIndex], ...updates };
+  return mockCourses[courseIndex];
+}
+
 export const deleteCourse = async (id: string): Promise<void> => {
   await delay(300);
   mockCourses = mockCourses.filter(c => c.id !== id);
