@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Users, Building, BookOpen, Activity, PlusCircle, Loader2, Trash2, Edit, Search } from "lucide-react";
+import { Users, Building, BookOpen, Activity, PlusCircle, Loader2, Trash2, Edit, Search, CalendarIcon, Video } from "lucide-react";
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
 import { addTeacher, getTeachers, getStudents, getCourses, addCourse, Teacher, Student, Course, addStudent, deleteTeacher, deleteStudent, deleteCourse, updateTeacher, updateStudent, updateCourse } from "@/lib/services";
@@ -32,6 +32,10 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 
 type DeletionTarget = { type: 'teacher' | 'student' | 'course', id: string, name: string } | null;
@@ -47,7 +51,8 @@ export default function ManagementPage() {
   const [isAddingStudent, setIsAddingStudent] = useState(false);
   const [isCreatingCourse, setIsCreatingCourse] = useState(false);
   const [deletionTarget, setDeletionTarget] = useState<DeletionTarget>(null);
-  const [editingTarget, setEditingTarget] = useState<EditingTarget>(null);
+  const [editingTarget, setEditingTarget] = useState<EditingTarget | null>(null);
+  const [editLiveClassDate, setEditLiveClassDate] = useState<Date | undefined>(undefined);
   const [isUpdating, setIsUpdating] = useState(false);
   const [studentSearch, setStudentSearch] = useState("");
 
@@ -142,11 +147,25 @@ export default function ManagementPage() {
     const description = (form.elements.namedItem("courseDesc") as HTMLTextAreaElement).value;
     const modulesText = (form.elements.namedItem("courseModules") as HTMLTextAreaElement).value;
     const teacherId = (form.elements.namedItem("courseTeacher") as HTMLInputElement).value;
+    const liveClassUrl = (form.elements.namedItem("liveClassUrl") as HTMLInputElement).value;
+    const liveClassDate = (form.elements.namedItem("liveClassDate") as HTMLInputElement).value;
+    const liveClassTime = (form.elements.namedItem("liveClassTime") as HTMLInputElement).value;
     
     const modules = modulesText.split('\n').filter(m => m.trim() !== '');
 
+    let liveClass;
+    if (liveClassUrl && liveClassDate && liveClassTime) {
+      const [hours, minutes] = liveClassTime.split(':').map(Number);
+      const dateTime = new Date(liveClassDate);
+      dateTime.setHours(hours, minutes);
+      liveClass = {
+        url: liveClassUrl,
+        dateTime: dateTime.toISOString(),
+      };
+    }
+
     try {
-      await addCourse({ title, description, modules, teacherId });
+      await addCourse({ title, description, modules, teacherId, liveClass });
       toast({
         title: "Course Created",
         description: `The course "${title}" has been created.`,
@@ -220,12 +239,27 @@ export default function ManagementPage() {
         } else if (editingTarget.type === 'course') {
            const modulesText = (form.elements.namedItem("editCourseModules") as HTMLTextAreaElement).value;
            const modules = modulesText.split('\n').filter(m => m.trim() !== '');
+           const liveClassUrl = (form.elements.namedItem("editLiveClassUrl") as HTMLInputElement).value;
+           const liveClassTime = (form.elements.namedItem("editLiveClassTime") as HTMLInputElement).value;
+           
+           let liveClass;
+            if (liveClassUrl && editLiveClassDate && liveClassTime) {
+              const [hours, minutes] = liveClassTime.split(':').map(Number);
+              const dateTime = new Date(editLiveClassDate);
+              dateTime.setHours(hours, minutes);
+              liveClass = {
+                url: liveClassUrl,
+                dateTime: dateTime.toISOString(),
+              };
+            }
+
            const updatedData: Course = {
                ...editingTarget.data,
                title: (form.elements.namedItem("editCourseTitle") as HTMLInputElement).value,
                description: (form.elements.namedItem("editCourseDesc") as HTMLTextAreaElement).value,
                teacherId: (form.elements.namedItem("editCourseTeacher") as HTMLSelectElement).value,
                modules: modules,
+               liveClass: liveClass,
            };
            await updateCourse(updatedData.id, updatedData);
         }
@@ -244,8 +278,17 @@ export default function ManagementPage() {
     } finally {
         setIsUpdating(false);
         setEditingTarget(null);
+        setEditLiveClassDate(undefined);
     }
   }
+
+  useEffect(() => {
+    if (editingTarget?.type === 'course' && editingTarget.data.liveClass?.dateTime) {
+      setEditLiveClassDate(new Date(editingTarget.data.liveClass.dateTime));
+    } else {
+      setEditLiveClassDate(undefined);
+    }
+  }, [editingTarget]);
 
   const filteredStudents = useMemo(() => {
     return students.filter(student =>
@@ -472,20 +515,22 @@ export default function ManagementPage() {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleCreateCourse} className="space-y-4">
-                  <div>
-                    <Label htmlFor="courseTitle">Course Title</Label>
-                    <Input id="courseTitle" name="courseTitle" placeholder="e.g., Introduction to Algebra" required />
-                  </div>
-                   <div>
-                    <Label htmlFor="courseTeacher">Assign Teacher</Label>
-                    <Select name="courseTeacher" required>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a teacher" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {teachers.map(t => <SelectItem key={t.id} value={t.id!}>{t.name}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="courseTitle">Course Title</Label>
+                      <Input id="courseTitle" name="courseTitle" placeholder="e.g., Introduction to Algebra" required />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="courseTeacher">Assign Teacher</Label>
+                      <Select name="courseTeacher" required>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a teacher" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {teachers.map(t => <SelectItem key={t.id} value={t.id!}>{t.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   <div>
                     <Label htmlFor="courseDesc">Course Description</Label>
@@ -494,6 +539,20 @@ export default function ManagementPage() {
                   <div>
                     <Label htmlFor="courseModules">Modules (one per line)</Label>
                     <Textarea id="courseModules" name="courseModules" placeholder="Module 1: Basic Equations&#10;Module 2: Functions" rows={4} required />
+                  </div>
+                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                     <div className="space-y-1.5 md:col-span-2">
+                        <Label htmlFor="liveClassUrl">Live Class URL (Optional)</Label>
+                        <Input id="liveClassUrl" name="liveClassUrl" placeholder="https://meet.google.com/..." />
+                     </div>
+                     <div className="space-y-1.5">
+                        <Label htmlFor="liveClassDate">Live Class Date</Label>
+                        <Input type="date" id="liveClassDate" name="liveClassDate" />
+                     </div>
+                     <div className="space-y-1.5">
+                        <Label htmlFor="liveClassTime">Live Class Time</Label>
+                        <Input type="time" id="liveClassTime" name="liveClassTime" />
+                     </div>
                   </div>
                   <Button type="submit" className="w-full" disabled={isCreatingCourse}>
                      {isCreatingCourse ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
@@ -514,16 +573,18 @@ export default function ManagementPage() {
                         <TableHead>Course Title</TableHead>
                         <TableHead>Assigned Teacher</TableHead>
                         <TableHead>Modules</TableHead>
+                        <TableHead>Live Class</TableHead>
                         <TableHead className="text-right">Action</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {isLoading && <TableRow><TableCell colSpan={4} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
+                      {isLoading && <TableRow><TableCell colSpan={5} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
                       {!isLoading && courses.map((c) => (
                         <TableRow key={c.id}>
                           <TableCell className="font-medium">{c.title}</TableCell>
                           <TableCell>{teachers.find(t => t.id === c.teacherId)?.name || 'N/A'}</TableCell>
                           <TableCell>{c.modules.length}</TableCell>
+                          <TableCell>{c.liveClass ? 'Scheduled' : 'None'}</TableCell>
                           <TableCell className="text-right space-x-2">
                              <Button variant="outline" size="sm" onClick={() => setEditingTarget({ type: 'course', data: c })}>
                                 <Edit className="h-4 w-4" />
@@ -561,8 +622,8 @@ export default function ManagementPage() {
       </AlertDialog>
 
        {/* Edit Dialog */}
-       <Dialog open={!!editingTarget} onOpenChange={() => setEditingTarget(null)}>
-        <DialogContent>
+       <Dialog open={!!editingTarget} onOpenChange={(open) => { if (!open) { setEditingTarget(null); setEditLiveClassDate(undefined); }}}>
+        <DialogContent className="sm:max-w-xl">
           <form onSubmit={handleUpdate}>
             <DialogHeader>
               <DialogTitle>Edit {editingTarget?.type?.charAt(0).toUpperCase()}{editingTarget?.type?.slice(1)}</DialogTitle>
@@ -644,6 +705,41 @@ export default function ManagementPage() {
                     <div className="grid gap-1.5">
                         <Label htmlFor="editCourseModules">Modules (one per line)</Label>
                         <Textarea id="editCourseModules" name="editCourseModules" defaultValue={(editingTarget.data as Course).modules.join('\n')} rows={4} required />
+                    </div>
+                    <div className="border-t pt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-1.5 md:col-span-2">
+                            <Label htmlFor="editLiveClassUrl">Live Class URL (Optional)</Label>
+                            <Input id="editLiveClassUrl" name="editLiveClassUrl" placeholder="https://meet.google.com/..." defaultValue={(editingTarget.data as Course).liveClass?.url} />
+                        </div>
+                        <div className="space-y-1.5">
+                             <Label htmlFor="editLiveClassDate">Live Class Date</Label>
+                             <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                      "w-full justify-start text-left font-normal",
+                                      !editLiveClassDate && "text-muted-foreground"
+                                    )}
+                                  >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {editLiveClassDate ? format(editLiveClassDate, "PPP") : <span>Pick a date</span>}
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0">
+                                  <Calendar
+                                    mode="single"
+                                    selected={editLiveClassDate}
+                                    onSelect={setEditLiveClassDate}
+                                    initialFocus
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                        </div>
+                         <div className="space-y-1.5">
+                            <Label htmlFor="editLiveClassTime">Live Class Time</Label>
+                            <Input type="time" id="editLiveClassTime" name="editLiveClassTime" defaultValue={editingTarget.data.liveClass?.dateTime ? format(new Date(editingTarget.data.liveClass.dateTime), 'HH:mm') : ""} />
+                        </div>
                     </div>
                 </div>
             )}

@@ -2,22 +2,24 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Book, MessageSquare, Send, Bot, Loader2, CalendarCheck, Film, Award, CheckCircle, User } from "lucide-react";
+import { Book, MessageSquare, Send, Bot, Loader2, CalendarCheck, Film, Award, CheckCircle, User, Video } from "lucide-react";
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
 import { getTutorResponse, getCertificate } from "@/lib/actions";
-import { getCourses, Course, Student } from "@/lib/services";
+import { getCoursesForStudent, Course, Student } from "@/lib/services";
 import { useToast } from "@/hooks/use-toast";
 import { getSession } from "@/lib/authService";
 import { Progress } from "@/components/ui/progress";
+import { format } from "date-fns";
 
 type ChatMessage = {
   author: "user" | "bot";
@@ -69,9 +71,10 @@ export default function StudentPage() {
 
   useEffect(() => {
     const fetchCourses = async () => {
+      if (!session) return;
       setIsLoadingCourses(true);
       try {
-        const coursesData = await getCourses();
+        const coursesData = await getCoursesForStudent(session.user.id);
         setCourses(coursesData);
         if (coursesData.length > 0) {
             setActiveCourseTopic(coursesData[0].title); 
@@ -86,8 +89,10 @@ export default function StudentPage() {
         setIsLoadingCourses(false);
       }
     };
-    fetchCourses();
-  }, [toast]);
+    if (session) {
+      fetchCourses();
+    }
+  }, [session, toast]);
   
 
   const attendance = [
@@ -213,6 +218,29 @@ export default function StudentPage() {
                       <AccordionContent>
                         <div className="space-y-4">
                            <p className="text-muted-foreground mb-4">{course.description}</p>
+                           {course.liveClass && (
+                            <Card className="bg-primary/10 border-primary/40">
+                              <CardHeader>
+                                <CardTitle className="text-base flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <Video className="h-5 w-5 text-primary" />
+                                    Live Class Session
+                                  </div>
+                                </CardTitle>
+                                <CardDescription>
+                                  {format(new Date(course.liveClass.dateTime), "eeee, MMMM d, yyyy 'at' h:mm a")}
+                                </CardDescription>
+                              </CardHeader>
+                              <CardContent>
+                                <Link href={course.liveClass.url} target="_blank" rel="noopener noreferrer">
+                                   <Button className="w-full">
+                                      Join Live Class
+                                   </Button>
+                                </Link>
+                              </CardContent>
+                            </Card>
+                           )}
+
                           {course.modules.map((module, moduleIndex) => (
                               <Card key={moduleIndex}>
                                  <CardHeader>

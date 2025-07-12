@@ -22,6 +22,10 @@ export interface Course {
   description: string;
   modules: string[];
   teacherId: string;
+  liveClass?: {
+    url: string;
+    dateTime: string;
+  }
 }
 
 // Default Mock Database
@@ -42,7 +46,11 @@ const defaultCourses: Course[] = [
     title: 'Introduction to Algebra', 
     description: 'Learn the fundamentals of algebraic expressions and equations.', 
     modules: ['Variables and Expressions', 'Solving Equations', 'Functions and Graphs'], 
-    teacherId: 't1' 
+    teacherId: 't1',
+    liveClass: {
+      url: 'https://meet.google.com/lookup/example',
+      dateTime: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days from now
+    }
   },
   { 
     id: 'c2', 
