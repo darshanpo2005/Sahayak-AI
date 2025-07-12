@@ -17,8 +17,14 @@ const GenerateQuizQuestionsInputSchema = z.object({
 });
 export type GenerateQuizQuestionsInput = z.infer<typeof GenerateQuizQuestionsInputSchema>;
 
+const QuizQuestionSchema = z.object({
+  question: z.string().describe('The text of the quiz question.'),
+  options: z.array(z.string()).describe('An array of 4 multiple-choice options.'),
+  correctAnswer: z.string().describe('The correct answer from the provided options.'),
+});
+
 const GenerateQuizQuestionsOutputSchema = z.object({
-  questions: z.array(z.string()).describe('An array of generated quiz questions.'),
+  questions: z.array(QuizQuestionSchema).describe('An array of generated quiz questions, each with options and a correct answer.'),
 });
 export type GenerateQuizQuestionsOutput = z.infer<typeof GenerateQuizQuestionsOutputSchema>;
 
@@ -31,13 +37,15 @@ const prompt = ai.definePrompt({
   input: {schema: GenerateQuizQuestionsInputSchema},
   output: {
     schema: GenerateQuizQuestionsOutputSchema,
-    format: 'json' // Enforce JSON output format
+    format: 'json'
   },
-  prompt: `You are an expert quiz creator for an educational platform. Your role is to generate a specified number of quiz questions based on the provided topic.
+  prompt: `You are an expert quiz creator for an educational platform. Your role is to generate a specified number of multiple-choice quiz questions based on the provided topic.
 
   Please generate {{numQuestions}} quiz questions on the following topic: "{{topic}}".
 
-  The output MUST be a valid JSON object containing a key named "questions" which holds an array of strings.
+  For each question, provide exactly 4 multiple-choice options and clearly indicate which one is the correct answer.
+
+  The output MUST be a valid JSON object. It should contain a key named "questions", which holds an array of objects. Each object in the array must have the following keys: "question", "options" (an array of 4 strings), and "correctAnswer" (a string that exactly matches one of the options).
   `,
 });
 

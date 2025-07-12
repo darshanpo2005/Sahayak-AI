@@ -13,11 +13,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { getLessonPlan, getQuiz } from "@/lib/actions";
 import type { GenerateLessonPlanAssistanceOutput, GenerateQuizQuestionsOutput } from "@/lib/actions";
-import { Lightbulb, HelpCircle, BarChart3, Bot, Sparkles, Loader2, CalendarCheck } from "lucide-react";
+import { Lightbulb, HelpCircle, BarChart3, Bot, Sparkles, Loader2, CalendarCheck, CheckCircle2 } from "lucide-react";
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { getStudents, Student } from "@/lib/services";
+import { cn } from "@/lib/utils";
 
 export default function TeacherPage() {
   const { toast } = useToast();
@@ -83,6 +84,11 @@ export default function TeacherPage() {
       setQuiz(result.data);
     } else {
       setQuizError(result.error);
+      toast({
+        variant: "destructive",
+        title: "Quiz Generation Failed",
+        description: result.error,
+      });
     }
     setIsQuizLoading(false);
   };
@@ -256,7 +262,7 @@ export default function TeacherPage() {
                 <CardDescription>The generated quiz questions will appear here.</CardDescription>
               </CardHeader>
               <CardContent className="flex-grow">
-                <ScrollArea className="h-[250px] w-full p-4 border rounded-md bg-muted/20">
+                <ScrollArea className="h-[300px] w-full p-4 border rounded-md bg-muted/20">
                   {isQuizLoading && (
                     <div className="space-y-4">
                       {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-4 w-full" />)}
@@ -264,9 +270,21 @@ export default function TeacherPage() {
                   )}
                   {quizError && <p className="text-destructive">{quizError}</p>}
                   {quiz ? (
-                    <ul className="space-y-3 list-decimal list-inside">
-                      {quiz.questions.map((q, i) => <li key={i}>{q}</li>)}
-                    </ul>
+                    <div className="space-y-6">
+                      {quiz.questions.map((q, i) => (
+                        <div key={i}>
+                          <p className="font-semibold mb-2">{i + 1}. {q.question}</p>
+                          <ul className="space-y-1 pl-4">
+                            {q.options.map((option, j) => (
+                              <li key={j} className={cn("flex items-center gap-2", option === q.correctAnswer && "text-primary font-medium")}>
+                                {option === q.correctAnswer && <CheckCircle2 className="h-4 w-4" />}
+                                {option}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
                   ) : !isQuizLoading && !quizError && (
                      <p className="text-muted-foreground">Your generated questions will be displayed here.</p>
                   )}
