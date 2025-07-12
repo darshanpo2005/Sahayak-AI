@@ -93,7 +93,7 @@ export default function StudentProfilePage() {
               <Badge>{student.grade}</Badge>
             </CardHeader>
             <CardContent className="text-center">
-               <p className="text-muted-foreground text-xs">{student.id}</p>
+               <p className="text-muted-foreground text-xs">ID: {student.id}</p>
             </CardContent>
           </Card>
         </div>

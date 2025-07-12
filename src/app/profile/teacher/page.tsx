@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableRow, TableHead, TableHeader } from "@/components/ui/table";
 import { BookOpen, User, Users, Loader2 } from "lucide-react";
 import { getCoursesForTeacher, getStudentsForTeacher, Course, Student, Teacher } from "@/lib/services";
@@ -56,6 +56,8 @@ export default function TeacherProfilePage() {
   }, [teacher, toast]);
   
   const getEnrolledCountForCourse = (courseId: string) => {
+    // This is a simplification. In a real app, you'd filter students by course enrollment.
+    // For this prototype, we'll assume all of a teacher's students are in all their courses.
     return assignedStudents.length;
   }
 
