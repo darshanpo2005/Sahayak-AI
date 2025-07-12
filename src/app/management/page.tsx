@@ -8,11 +8,23 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Users, Building, BookOpen, Activity, PlusCircle, Loader2 } from "lucide-react";
+import { Users, Building, BookOpen, Activity, PlusCircle, Loader2, Trash2 } from "lucide-react";
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
-import { addTeacher, getTeachers, getStudents, getCourses, addCourse, Teacher, Student, Course } from "@/lib/services";
+import { addTeacher, getTeachers, getStudents, getCourses, addCourse, Teacher, Student, Course, addStudent, deleteTeacher, deleteStudent } from "@/lib/services";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+
+type DeletionTarget = { type: 'teacher' | 'student', id: string, name: string } | null;
 
 export default function ManagementPage() {
   const { toast } = useToast();
@@ -20,6 +32,10 @@ export default function ManagementPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAddingTeacher, setIsAddingTeacher] = useState(false);
+  const [isAddingStudent, setIsAddingStudent] = useState(false);
+  const [isCreatingCourse, setIsCreatingCourse] = useState(false);
+  const [deletionTarget, setDeletionTarget] = useState<DeletionTarget>(null);
 
   const fetchDashboardData = async () => {
     setIsLoading(true);
@@ -49,6 +65,7 @@ export default function ManagementPage() {
 
   const handleAddTeacher = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsAddingTeacher(true);
     const form = e.target as HTMLFormElement;
     const name = (form.elements.namedItem("teacherName") as HTMLInputElement).value;
     const email = (form.elements.namedItem("teacherEmail") as HTMLInputElement).value;
@@ -67,11 +84,42 @@ export default function ManagementPage() {
         title: "Error",
         description: "Could not add the teacher.",
       });
+    } finally {
+      setIsAddingTeacher(false);
+    }
+  };
+  
+  const handleAddStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsAddingStudent(true);
+    const form = e.target as HTMLFormElement;
+    const name = (form.elements.namedItem("studentName") as HTMLInputElement).value;
+    const grade = (form.elements.namedItem("studentGrade") as HTMLInputElement).value;
+    const teacherId = (form.elements.namedItem("studentTeacher") as HTMLInputElement).value;
+
+    try {
+      await addStudent({ name, grade, teacherId });
+      toast({
+        title: "Student Added",
+        description: `${name} has been added successfully.`,
+      });
+      form.reset();
+      fetchDashboardData();
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not add the student.",
+      });
+    } finally {
+      setIsAddingStudent(false);
     }
   };
 
+
   const handleCreateCourse = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsCreatingCourse(true);
     const form = e.target as HTMLFormElement;
     const title = (form.elements.namedItem("courseTitle") as HTMLInputElement).value;
     const description = (form.elements.namedItem("courseDesc") as HTMLTextAreaElement).value;
@@ -94,6 +142,33 @@ export default function ManagementPage() {
         title: "Error",
         description: "Could not create the course.",
       });
+    } finally {
+        setIsCreatingCourse(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deletionTarget) return;
+
+    try {
+      if (deletionTarget.type === 'teacher') {
+        await deleteTeacher(deletionTarget.id);
+      } else {
+        await deleteStudent(deletionTarget.id);
+      }
+      toast({
+        title: `${deletionTarget.type.charAt(0).toUpperCase() + deletionTarget.type.slice(1)} Deleted`,
+        description: `${deletionTarget.name} has been removed.`,
+      });
+      fetchDashboardData();
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: `Could not delete ${deletionTarget.type}.`,
+      });
+    } finally {
+      setDeletionTarget(null);
     }
   };
 
@@ -146,8 +221,7 @@ export default function ManagementPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="users">
-          <div className="grid gap-6">
+        <TabsContent value="users" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Add a New Teacher</CardTitle>
@@ -162,12 +236,47 @@ export default function ManagementPage() {
                     <Label htmlFor="teacherEmail">Email Address</Label>
                     <Input id="teacherEmail" name="teacherEmail" type="email" placeholder="e.g., jane.doe@school.com" required />
                   </div>
-                  <Button type="submit" className="w-full md:w-auto">
-                    <PlusCircle className="mr-2 h-4 w-4" /> Add Teacher
+                  <Button type="submit" className="w-full md:w-auto" disabled={isAddingTeacher}>
+                    {isAddingTeacher ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+                     Add Teacher
                   </Button>
                 </form>
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Add a New Student</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleAddStudent} className="grid md:grid-cols-4 gap-4 items-end">
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="studentName">Full Name</Label>
+                    <Input id="studentName" name="studentName" placeholder="e.g., Alex Doe" required />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="studentGrade">Grade</Label>
+                    <Input id="studentGrade" name="studentGrade" placeholder="e.g., 10th Grade" required />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="studentTeacher">Assign Teacher</Label>
+                    <Select name="studentTeacher" required>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a teacher" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {teachers.map(t => <SelectItem key={t.id} value={t.id!}>{t.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button type="submit" className="w-full md:w-auto" disabled={isAddingStudent}>
+                    {isAddingStudent ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+                     Add Student
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+
              <Card>
               <CardHeader>
                 <CardTitle>Manage Teachers</CardTitle>
@@ -188,7 +297,9 @@ export default function ManagementPage() {
                           <TableCell className="font-medium">{t.name}</TableCell>
                           <TableCell>{t.email}</TableCell>
                           <TableCell className="text-right">
-                            <Button variant="outline" size="sm" disabled>Edit</Button>
+                            <Button variant="destructive" size="sm" onClick={() => setDeletionTarget({ type: 'teacher', id: t.id!, name: t.name })}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -218,7 +329,9 @@ export default function ManagementPage() {
                           <TableCell>{s.grade}</TableCell>
                           <TableCell>{teachers.find(t => t.id === s.teacherId)?.name || 'N/A'}</TableCell>
                           <TableCell className="text-right">
-                             <Button variant="outline" size="sm" disabled>Edit</Button>
+                             <Button variant="destructive" size="sm" onClick={() => setDeletionTarget({ type: 'student', id: s.id!, name: s.name })}>
+                                <Trash2 className="h-4 w-4" />
+                             </Button>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -226,7 +339,6 @@ export default function ManagementPage() {
                   </Table>
               </CardContent>
             </Card>
-          </div>
         </TabsContent>
 
         <TabsContent value="courses">
@@ -261,8 +373,9 @@ export default function ManagementPage() {
                     <Label htmlFor="courseModules">Modules (one per line)</Label>
                     <Textarea id="courseModules" name="courseModules" placeholder="Module 1: Basic Equations&#10;Module 2: Functions" rows={4} required />
                   </div>
-                  <Button type="submit" className="w-full">
-                    <PlusCircle className="mr-2 h-4 w-4" /> Create Course
+                  <Button type="submit" className="w-full" disabled={isCreatingCourse}>
+                     {isCreatingCourse ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+                     Create Course
                   </Button>
                 </form>
               </CardContent>
@@ -301,6 +414,22 @@ export default function ManagementPage() {
           </div>
         </TabsContent>
       </Tabs>
+      <AlertDialog open={!!deletionTarget} onOpenChange={() => setDeletionTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the {deletionTarget?.type} <strong>{deletionTarget?.name}</strong>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardPage>
   );
 }

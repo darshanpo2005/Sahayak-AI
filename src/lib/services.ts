@@ -38,6 +38,15 @@ export const getTeachers = async (): Promise<Teacher[]> => {
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Teacher));
 };
 
+export const deleteTeacher = async (id: string) => {
+  try {
+    await deleteDoc(doc(db, 'teachers', id));
+  } catch (e) {
+    console.error("Error deleting document: ", e);
+    throw new Error("Could not delete teacher");
+  }
+};
+
 
 // Student Services
 export const addStudent = async (student: Omit<Student, 'id'>) => {
@@ -54,6 +63,16 @@ export const getStudents = async (): Promise<Student[]> => {
     const querySnapshot = await getDocs(collection(db, "students"));
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student));
 }
+
+export const deleteStudent = async (id: string) => {
+  try {
+    await deleteDoc(doc(db, 'students', id));
+  } catch (e) {
+    console.error("Error deleting document: ", e);
+    throw new Error("Could not delete student");
+  }
+};
+
 
 // Course Services
 export const addCourse = async (course: Omit<Course, 'id'>) => {
