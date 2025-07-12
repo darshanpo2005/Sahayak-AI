@@ -30,15 +30,20 @@ const prompt = ai.definePrompt({
   name: 'generateQuizQuestionsPrompt',
   input: {schema: GenerateQuizQuestionsInputSchema},
   output: {schema: GenerateQuizQuestionsOutputSchema},
-  prompt: `You are an AI assistant helping teachers generate quiz questions.
-
-  Please generate {{numQuestions}} quiz questions on the following topic:
+  system: `You are an expert quiz creator for an educational platform. Your role is to generate a specified number of quiz questions based on the provided topic. The output must be a JSON object containing a 'questions' array with the generated questions as strings.`,
+  prompt: `Please generate {{numQuestions}} quiz questions on the following topic:
 
   {{topic}}
 
-  The quiz questions should be in a format that can be easily copied and pasted into a document.
-  Each question should be on a new line.
-  `,
+  Here is an example of the expected output format:
+  {
+    "questions": [
+      "What is the capital of France?",
+      "Who wrote 'To Kill a Mockingbird'?"
+    ]
+  }
+
+  Each question should be a unique string within the 'questions' array.`,
 });
 
 const generateQuizQuestionsFlow = ai.defineFlow(
