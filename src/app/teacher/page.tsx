@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,12 +13,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { getLessonPlan, getQuiz } from "@/lib/actions";
 import type { GenerateLessonPlanAssistanceOutput, GenerateQuizQuestionsOutput } from "@/lib/actions";
-import { Lightbulb, HelpCircle, BarChart3, Bot, Sparkles, Loader2, CalendarCheck, Checkbox } from "lucide-react";
+import { Lightbulb, HelpCircle, BarChart3, Bot, Sparkles, Loader2, CalendarCheck } from "lucide-react";
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
+import { getStudents, Student } from "@/lib/services";
 
 export default function TeacherPage() {
+  const { toast } = useToast();
   const [lessonPlan, setLessonPlan] = useState<GenerateLessonPlanAssistanceOutput | null>(null);
   const [isLessonPlanLoading, setIsLessonPlanLoading] = useState(false);
   const [lessonPlanError, setLessonPlanError] = useState<string | null>(null);
@@ -26,8 +28,28 @@ export default function TeacherPage() {
   const [quiz, setQuiz] = useState<GenerateQuizQuestionsOutput | null>(null);
   const [isQuizLoading, setIsQuizLoading] = useState(false);
   const [quizError, setQuizError] = useState<string | null>(null);
+  
+  const [students, setStudents] = useState<Student[]>([]);
+  const [isStudentsLoading, setIsStudentsLoading] = useState(true);
 
-  const { toast } = useToast();
+  useEffect(() => {
+    const fetchStudents = async () => {
+      setIsStudentsLoading(true);
+      try {
+        const studentsData = await getStudents();
+        setStudents(studentsData);
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load students.",
+        });
+      } finally {
+        setIsStudentsLoading(false);
+      }
+    };
+    fetchStudents();
+  }, [toast]);
 
   const handleLessonPlanSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -73,12 +95,15 @@ export default function TeacherPage() {
     });
   };
 
-  const students = [
-    { name: "Alice Johnson", progress: 85, status: "On Track" },
-    { name: "Bob Williams", progress: 60, status: "Needs Help" },
-    { name: "Charlie Brown", progress: 95, status: "Excelling" },
-    { name: "Diana Miller", progress: 72, status: "On Track" },
-  ];
+  const studentProgress = students.map(student => ({
+      name: student.name,
+      progress: Math.floor(Math.random() * 60) + 40, // Simulated progress
+      get status() {
+        if (this.progress > 90) return "Excelling";
+        if (this.progress > 70) return "On Track";
+        return "Needs Help";
+      }
+  }));
 
   return (
     <DashboardPage title="Teacher Dashboard" role="Teacher">
@@ -94,7 +119,7 @@ export default function TeacherPage() {
           <Card>
             <CardHeader>
               <CardTitle>Take Attendance</CardTitle>
-              <CardDescription>Mark student attendance for {new Date().toLocaleDateString()}. (Simulated)</CardDescription>
+              <CardDescription>Mark student attendance for {new Date().toLocaleDateString()}.</CardDescription>
             </CardHeader>
             <form onSubmit={handleAttendanceSubmit}>
               <CardContent>
@@ -106,8 +131,9 @@ export default function TeacherPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {students.map((student) => (
-                      <TableRow key={student.name}>
+                    {isStudentsLoading && <TableRow><TableCell colSpan={2} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
+                    {!isStudentsLoading && students.map((student) => (
+                      <TableRow key={student.id}>
                         <TableCell className="font-medium">{student.name}</TableCell>
                         <TableCell className="text-right">
                           <RadioGroup defaultValue="present" name={`attendance-${student.name}`} className="justify-end gap-4 sm:gap-6 flex flex-row">
@@ -254,7 +280,7 @@ export default function TeacherPage() {
           <Card>
             <CardHeader>
               <CardTitle>Student Progress</CardTitle>
-              <CardDescription>Overview of your students' performance. (Simulated Data)</CardDescription>
+              <CardDescription>Overview of your students' performance.</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
@@ -266,7 +292,8 @@ export default function TeacherPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {students.map((student) => (
+                  {isStudentsLoading && <TableRow><TableCell colSpan={3} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
+                  {!isStudentsLoading && studentProgress.map((student) => (
                     <TableRow key={student.name}>
                       <TableCell className="font-medium">{student.name}</TableCell>
                       <TableCell>

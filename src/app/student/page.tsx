@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +13,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
 import { getTutorResponse } from "@/lib/actions";
+import { getCourses, Course } from "@/lib/services";
+import { useToast } from "@/hooks/use-toast";
+
 
 type ChatMessage = {
   author: "user" | "bot";
@@ -20,33 +23,37 @@ type ChatMessage = {
 };
 
 export default function StudentPage() {
+  const { toast } = useToast();
   const [question, setQuestion] = useState("");
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [isAnswering, setIsAnswering] = useState(false);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [isLoadingCourses, setIsLoadingCourses] = useState(true);
 
-  const courses = [
-    {
-      title: "Introduction to Algebra",
-      topic: "Algebra",
-      modules: [
-        { name: "Variables and Expressions", videoUrl: "https://placehold.co/1280x720.mp4" },
-        { name: "Solving Linear Equations", videoUrl: "https://placehold.co/1280x720.mp4" },
-        { name: "Graphing Functions", videoUrl: "https://placehold.co/1280x720.mp4" },
-      ],
-    },
-    {
-      title: "World History: Ancient Civilizations",
-      topic: "World History",
-      modules: [
-        { name: "Mesopotamia", videoUrl: "https://placehold.co/1280x720.mp4" },
-        { name: "Ancient Egypt", videoUrl: "https://placehold.co/1280x720.mp4" },
-        { name: "The Roman Empire", videoUrl: "https://placehold.co/1280x720.mp4" },
-      ],
-    },
-  ];
-
-  const [activeCourseTopic, setActiveCourseTopic] = useState(courses[0].topic);
+  useEffect(() => {
+    const fetchCourses = async () => {
+      setIsLoadingCourses(true);
+      try {
+        const coursesData = await getCourses();
+        setCourses(coursesData);
+        if (coursesData.length > 0) {
+            setActiveCourseTopic(coursesData[0].title); 
+        }
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load courses.",
+        });
+      } finally {
+        setIsLoadingCourses(false);
+      }
+    };
+    fetchCourses();
+  }, [toast]);
   
+  const [activeCourseTopic, setActiveCourseTopic] = useState(courses.length > 0 ? courses[0].title : "your course");
+
   const attendance = [
     { date: "2024-07-22", status: "Present" },
     { date: "2024-07-21", status: "Present" },
@@ -95,35 +102,44 @@ export default function StudentPage() {
               <CardDescription>Access your enrolled courses, modules, and video lectures here.</CardDescription>
             </CardHeader>
             <CardContent>
-              <Accordion type="single" collapsible className="w-full" onValueChange={(value) => {
-                const courseIndex = parseInt(value.split('-')[1]);
-                setActiveCourseTopic(courses[courseIndex].topic);
-              }}>
-                {courses.map((course, index) => (
-                  <AccordionItem value={`item-${index}`} key={index}>
-                    <AccordionTrigger className="text-lg font-medium">{course.title}</AccordionTrigger>
-                    <AccordionContent>
-                      <div className="space-y-4">
-                        {course.modules.map((module, moduleIndex) => (
-                            <Card key={moduleIndex}>
-                               <CardHeader>
-                                    <CardTitle className="text-base flex items-center gap-2">
-                                        <Film className="h-5 w-5 text-primary" />
-                                        {module.name}
-                                    </CardTitle>
-                               </CardHeader>
-                               <CardContent>
-                                    <div className="aspect-video bg-muted rounded-md flex items-center justify-center">
-                                       <p className="text-muted-foreground">Video player placeholder</p>
-                                    </div>
-                               </CardContent>
-                            </Card>
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
+              {isLoadingCourses ? (
+                <div className="flex justify-center items-center h-40">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+              ) : (
+                <Accordion type="single" collapsible className="w-full" onValueChange={(value) => {
+                    const selectedCourse = courses.find(c => c.id === value);
+                    if (selectedCourse) {
+                      setActiveCourseTopic(selectedCourse.title);
+                    }
+                }}>
+                  {courses.map((course) => (
+                    <AccordionItem value={course.id!} key={course.id}>
+                      <AccordionTrigger className="text-lg font-medium">{course.title}</AccordionTrigger>
+                      <AccordionContent>
+                        <div className="space-y-4">
+                           <p className="text-muted-foreground mb-4">{course.description}</p>
+                          {course.modules.map((module, moduleIndex) => (
+                              <Card key={moduleIndex}>
+                                 <CardHeader>
+                                      <CardTitle className="text-base flex items-center gap-2">
+                                          <Film className="h-5 w-5 text-primary" />
+                                          {module}
+                                      </CardTitle>
+                                 </CardHeader>
+                                 <CardContent>
+                                      <div className="aspect-video bg-muted rounded-md flex items-center justify-center">
+                                         <p className="text-muted-foreground">Video player placeholder</p>
+                                      </div>
+                                 </CardContent>
+                              </Card>
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

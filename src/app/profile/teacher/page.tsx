@@ -1,13 +1,21 @@
 "use client"
 
+import { useState, useEffect } from "react";
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableRow, TableHead, TableHeader } from "@/components/ui/table";
-import { BookOpen, User, Users } from "lucide-react";
+import { BookOpen, User, Users, Loader2 } from "lucide-react";
+import { getCourses, getStudents, Course, Student } from "@/lib/services";
+import { useToast } from "@/hooks/use-toast";
+
 
 export default function TeacherProfilePage() {
+  const { toast } = useToast();
+  const [assignedCourses, setAssignedCourses] = useState<Course[]>([]);
+  const [assignedStudents, setAssignedStudents] = useState<Student[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const teacher = {
     name: "Jane Doe",
@@ -16,15 +24,28 @@ export default function TeacherProfilePage() {
     avatarUrl: "https://placehold.co/128x128.png",
   };
 
-  const assignedCourses = [
-    { title: "Introduction to Algebra", students: 25 },
-    { title: "Fundamentals of Biology", students: 30 },
-  ];
-  
-  const assignedStudents = [
-      { name: "Alice Johnson", grade: "10th" },
-      { name: "Charlie Brown", grade: "10th" },
-  ]
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const [coursesData, studentsData] = await Promise.all([
+          getCourses(),
+          getStudents(),
+        ]);
+        setAssignedCourses(coursesData);
+        setAssignedStudents(studentsData);
+      } catch (error) {
+         toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load profile data.",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, [toast]);
 
   return (
     <DashboardPage title="My Profile" role="Teacher">
@@ -63,12 +84,16 @@ export default function TeacherProfilePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {assignedCourses.map((course) => (
-                    <TableRow key={course.title}>
-                      <TableCell className="font-medium">{course.title}</TableCell>
-                      <TableCell>{course.students}</TableCell>
-                    </TableRow>
-                  ))}
+                  {isLoading ? (
+                    <TableRow><TableCell colSpan={2} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>
+                  ) : (
+                    assignedCourses.map((course) => (
+                      <TableRow key={course.id}>
+                        <TableCell className="font-medium">{course.title}</TableCell>
+                        <TableCell>{assignedStudents.length}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -89,12 +114,16 @@ export default function TeacherProfilePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {assignedStudents.map((student) => (
-                    <TableRow key={student.name}>
-                      <TableCell className="font-medium">{student.name}</TableCell>
-                      <TableCell>{student.grade}</TableCell>
-                    </TableRow>
-                  ))}
+                   {isLoading ? (
+                    <TableRow><TableCell colSpan={2} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>
+                  ) : (
+                    assignedStudents.map((student) => (
+                      <TableRow key={student.id}>
+                        <TableCell className="font-medium">{student.name}</TableCell>
+                        <TableCell>{student.grade}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
