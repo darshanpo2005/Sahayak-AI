@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { getLessonPlan, getQuiz } from "@/lib/actions";
@@ -18,7 +17,7 @@ import { Lightbulb, HelpCircle, BarChart3, Bot, Sparkles, Loader2, CalendarCheck
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { getStudentsForTeacher, Student, Teacher, saveQuizForCourse, saveAttendance, AttendanceRecord } from "@/lib/services";
+import { getStudentsForTeacher, Student, Teacher, saveQuizForCourse, saveAttendance, AttendanceRecord, getQuizResultsForCourse, QuizResultRecord } from "@/lib/services";
 import { getSession } from "@/lib/authService";
 import { cn } from "@/lib/utils";
 import {
@@ -29,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getCoursesForTeacher, Course } from "@/lib/services";
+import { StudentProgressChart } from "@/components/analytics/student-progress-chart";
 
 export default function TeacherPage() {
   const { toast } = useToast();
@@ -47,10 +47,11 @@ export default function TeacherPage() {
   const [isStudentsLoading, setIsStudentsLoading] = useState(true);
   
   const [courses, setCourses] = useState<Course[]>([]);
-  const [selectedCourseForQuiz, setSelectedCourseForQuiz] = useState<string>("");
+  const [selectedCourse, setSelectedCourse] = useState<string>("");
   
   const [isSubmittingAttendance, setIsSubmittingAttendance] = useState(false);
-
+  const [quizResults, setQuizResults] = useState<QuizResultRecord[]>([]);
+  const [isAnalyticsLoading, setIsAnalyticsLoading] = useState(false);
 
   useEffect(() => {
     const currentSession = getSession();
@@ -73,7 +74,7 @@ export default function TeacherPage() {
         setStudents(studentsData);
         setCourses(coursesData);
         if (coursesData.length > 0) {
-          setSelectedCourseForQuiz(coursesData[0].id);
+          setSelectedCourse(coursesData[0].id);
         }
       } catch (error) {
         toast({
@@ -89,6 +90,22 @@ export default function TeacherPage() {
       fetchInitialData();
     }
   }, [session, toast]);
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      if(!selectedCourse) return;
+      setIsAnalyticsLoading(true);
+      try {
+        const results = await getQuizResultsForCourse(selectedCourse);
+        setQuizResults(results);
+      } catch (error) {
+        toast({ variant: "destructive", title: "Error", description: "Could not load quiz results."})
+      } finally {
+        setIsAnalyticsLoading(false);
+      }
+    }
+    fetchAnalytics();
+  }, [selectedCourse, toast]);
 
   const handleLessonPlanSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -120,10 +137,10 @@ export default function TeacherPage() {
     const result = await getQuiz({ topic, numQuestions });
     if (result.success) {
       setQuiz(result.data);
-      await saveQuizForCourse(selectedCourseForQuiz, result.data);
+      await saveQuizForCourse(selectedCourse, result.data);
       toast({
         title: "Quiz Generated & Saved",
-        description: `Quiz for ${courses.find(c => c.id === selectedCourseForQuiz)?.title} has been created.`,
+        description: `Quiz for ${courses.find(c => c.id === selectedCourse)?.title} has been created.`,
       });
     } else {
       setQuizError(result.error);
@@ -171,17 +188,7 @@ export default function TeacherPage() {
     }
   };
 
-  const studentProgress = students.map(student => ({
-      id: student.id,
-      name: student.name,
-      progress: Math.floor(student.id.charCodeAt(1) % 5) * 20 + 10, // Simulated but consistent progress
-      get status() {
-        if (this.progress > 80) return "Excelling";
-        if (this.progress > 60) return "On Track";
-        if (this.progress > 40) return "Needs Attention";
-        return "At Risk";
-      }
-  }));
+  const getStudentName = (studentId: string) => students.find(s => s.id === studentId)?.name || 'Unknown Student';
 
   if (!session) {
     return (
@@ -198,7 +205,7 @@ export default function TeacherPage() {
           <TabsTrigger value="attendance"><CalendarCheck className="mr-2 h-4 w-4"/>Take Attendance</TabsTrigger>
           <TabsTrigger value="lesson-plan"><Lightbulb className="mr-2 h-4 w-4" />Lesson Plan AI</TabsTrigger>
           <TabsTrigger value="quiz"><HelpCircle className="mr-2 h-4 w-4" />Quiz Generator</TabsTrigger>
-          <TabsTrigger value="progress"><BarChart3 className="mr-2 h-4 w-4" />Student Progress</TabsTrigger>
+          <TabsTrigger value="progress"><BarChart3 className="mr-2 h-4 w-4" />Student Analytics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="attendance">
@@ -330,8 +337,8 @@ export default function TeacherPage() {
                        <Select 
                         name="course" 
                         required 
-                        value={selectedCourseForQuiz}
-                        onValueChange={setSelectedCourseForQuiz}
+                        value={selectedCourse}
+                        onValueChange={setSelectedCourse}
                       >
                         <SelectTrigger id="course-select">
                           <SelectValue placeholder="Select a course" />
@@ -351,7 +358,7 @@ export default function TeacherPage() {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button type="submit" disabled={isQuizLoading || !selectedCourseForQuiz} className="w-full">
+                  <Button type="submit" disabled={isQuizLoading || !selectedCourse} className="w-full">
                     {isQuizLoading ? (
                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...</>
                     ) : (
@@ -403,40 +410,77 @@ export default function TeacherPage() {
         <TabsContent value="progress">
           <Card>
             <CardHeader>
-              <CardTitle>Student Progress</CardTitle>
-              <CardDescription>Overview of your students' performance (Simulated).</CardDescription>
+               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <CardTitle>Student Analytics</CardTitle>
+                  <CardDescription>View quiz performance for your students.</CardDescription>
+                </div>
+                 <Select 
+                    value={selectedCourse} 
+                    onValueChange={setSelectedCourse}
+                    disabled={courses.length === 0}
+                  >
+                    <SelectTrigger className="w-full sm:w-[250px]">
+                      <SelectValue placeholder="Select a course to view analytics" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {courses.map(c => <SelectItem key={c.id} value={c.id!}>{c.title}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+               </div>
             </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Student</TableHead>
-                    <TableHead>Progress</TableHead>
-                    <TableHead className="text-right">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isStudentsLoading && <TableRow><TableCell colSpan={3} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
-                  {!isStudentsLoading && studentProgress.map((student) => (
-                    <TableRow key={student.id}>
-                      <TableCell className="font-medium">{student.name}</TableCell>
-                      <TableCell>
-                        <Progress value={student.progress} className="w-[80%]" />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Badge variant={student.status === "On Track" ? "default" : student.status === "Needs Attention" ? "secondary" : student.status === "At Risk" ? "destructive" : "outline"}>{student.status}</Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                   {!isStudentsLoading && students.length === 0 && (
-                        <TableRow>
-                            <TableCell colSpan={3} className="text-center text-muted-foreground">
-                                You have no students assigned to you.
-                            </TableCell>
-                        </TableRow>
+            <CardContent className="space-y-6">
+               <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Class Performance</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {isAnalyticsLoading ? (
+                      <div className="flex items-center justify-center h-[250px]">
+                        <Loader2 className="h-8 w-8 animate-spin" />
+                      </div>
+                    ) : quizResults.length > 0 ? (
+                        <StudentProgressChart data={quizResults} />
+                    ) : (
+                      <div className="flex items-center justify-center h-[250px] text-center text-muted-foreground">
+                        <p>No quiz results available for this course yet.</p>
+                      </div>
                     )}
-                </TableBody>
-              </Table>
+                  </CardContent>
+               </Card>
+               <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Individual Results</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                     <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Student</TableHead>
+                          <TableHead className="text-right">Score</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {isAnalyticsLoading && <TableRow><TableCell colSpan={2} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
+                        {!isAnalyticsLoading && quizResults.map((result) => (
+                          <TableRow key={result.studentId}>
+                            <TableCell className="font-medium">{getStudentName(result.studentId)}</TableCell>
+                            <TableCell className="text-right">
+                              <Badge variant="secondary">{result.score} / {result.total}</Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                         {!isAnalyticsLoading && quizResults.length === 0 && (
+                              <TableRow>
+                                  <TableCell colSpan={2} className="text-center text-muted-foreground">
+                                      No results to display.
+                                  </TableCell>
+                              </TableRow>
+                          )}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+               </Card>
             </CardContent>
           </Card>
         </TabsContent>

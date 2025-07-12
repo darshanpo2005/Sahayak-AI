@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
 import { getTutorResponse, getCertificate, GenerateQuizQuestionsOutput } from "@/lib/actions";
-import { getCoursesForStudent, Course, Student, getQuizForCourse, getAttendanceForStudent, AttendanceRecord } from "@/lib/services";
+import { getCoursesForStudent, Course, Student, getQuizForCourse, getAttendanceForStudent, AttendanceRecord, saveQuizResult } from "@/lib/services";
 import { useToast } from "@/hooks/use-toast";
 import { getSession } from "@/lib/authService";
 import { Progress } from "@/components/ui/progress";
@@ -201,9 +201,9 @@ export default function StudentPage() {
     setQuizAnswers(prev => ({ ...prev, [questionIndex]: answer }));
   };
 
-  const handleQuizSubmit = (e: React.FormEvent) => {
+  const handleQuizSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!quizData) return;
+    if (!quizData || !session || !activeCourseId) return;
 
     let score = 0;
     quizData.questions.forEach((q, index) => {
@@ -212,8 +212,21 @@ export default function StudentPage() {
         }
     });
 
-    setQuizResult({ score, total: quizData.questions.length, answers: quizAnswers });
-    toast({ title: "Quiz Submitted!", description: `You scored ${score} out of ${quizData.questions.length}`});
+    const result = { score, total: quizData.questions.length, answers: quizAnswers };
+    setQuizResult(result);
+    
+    try {
+      await saveQuizResult({
+        studentId: session.user.id,
+        courseId: activeCourseId,
+        score: result.score,
+        total: result.total,
+        takenAt: new Date().toISOString()
+      });
+      toast({ title: "Quiz Submitted!", description: `You scored ${score} out of ${quizData.questions.length}. Your result has been saved.`});
+    } catch(error) {
+      toast({ variant: "destructive", title: "Error", description: "Could not save your quiz result."});
+    }
   }
   
     useEffect(() => {
