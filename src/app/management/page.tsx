@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Users, Building, BookOpen, Activity, PlusCircle, Loader2, Trash2, Edit, Search, CalendarIcon, Video } from "lucide-react";
+import { Users, Building, BookOpen, Activity, PlusCircle, Loader2, Trash2, Edit, Search, Calendar as CalendarIcon, Video } from "lucide-react";
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
 import { addTeacher, getTeachers, getStudents, getCourses, addCourse, Teacher, Student, Course, addStudent, deleteTeacher, deleteStudent, deleteCourse, updateTeacher, updateStudent, updateCourse } from "@/lib/services";
@@ -219,23 +219,27 @@ export default function ManagementPage() {
 
     try {
         if (editingTarget.type === 'teacher') {
-            const updatedData: Teacher = {
-                ...editingTarget.data,
+            const updatedData: Partial<Teacher> = {
                 name: (form.elements.namedItem("editTeacherName") as HTMLInputElement).value,
                 email: (form.elements.namedItem("editTeacherEmail") as HTMLInputElement).value,
-                password: (form.elements.namedItem("editTeacherPassword") as HTMLInputElement).value,
             };
-            await updateTeacher(updatedData.id, updatedData);
+            const passwordInput = (form.elements.namedItem("editTeacherPassword") as HTMLInputElement).value;
+            if (passwordInput) {
+              updatedData.password = passwordInput
+            }
+            await updateTeacher(editingTarget.data.id, updatedData);
         } else if (editingTarget.type === 'student') {
-            const updatedData: Student = {
-                 ...editingTarget.data,
+            const updatedData: Partial<Student> = {
                 name: (form.elements.namedItem("editStudentName") as HTMLInputElement).value,
                 email: (form.elements.namedItem("editStudentEmail") as HTMLInputElement).value,
-                password: (form.elements.namedItem("editStudentPassword") as HTMLInputElement).value,
                 grade: (form.elements.namedItem("editStudentGrade") as HTMLInputElement).value,
                 teacherId: (form.elements.namedItem("editStudentTeacher") as HTMLSelectElement).value,
             };
-            await updateStudent(updatedData.id, updatedData);
+            const passwordInput = (form.elements.namedItem("editStudentPassword") as HTMLInputElement).value;
+            if (passwordInput) {
+              updatedData.password = passwordInput
+            }
+            await updateStudent(editingTarget.data.id, updatedData);
         } else if (editingTarget.type === 'course') {
            const modulesText = (form.elements.namedItem("editCourseModules") as HTMLTextAreaElement).value;
            const modules = modulesText.split('\n').filter(m => m.trim() !== '');
@@ -251,6 +255,8 @@ export default function ManagementPage() {
                 url: liveClassUrl,
                 dateTime: dateTime.toISOString(),
               };
+            } else {
+              liveClass = undefined;
             }
 
            const updatedData: Course = {
@@ -424,17 +430,15 @@ export default function ManagementPage() {
                       <TableRow>
                         <TableHead>Name</TableHead>
                         <TableHead>Email</TableHead>
-                        <TableHead>Password</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {isLoading && <TableRow><TableCell colSpan={4} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
+                      {isLoading && <TableRow><TableCell colSpan={3} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
                       {!isLoading && teachers.map((t) => (
                         <TableRow key={t.id}>
                           <TableCell className="font-medium">{t.name}</TableCell>
                           <TableCell>{t.email}</TableCell>
-                          <TableCell>{t.password}</TableCell>
                           <TableCell className="text-right space-x-2">
                              <Button variant="outline" size="sm" onClick={() => setEditingTarget({ type: 'teacher', data: t })}>
                                 <Edit className="h-4 w-4" />
@@ -468,19 +472,17 @@ export default function ManagementPage() {
                       <TableRow>
                         <TableHead>Name</TableHead>
                         <TableHead>Email</TableHead>
-                        <TableHead>Password</TableHead>
                         <TableHead>Grade</TableHead>
                         <TableHead>Assigned Teacher</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                       {isLoading && <TableRow><TableCell colSpan={6} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
+                       {isLoading && <TableRow><TableCell colSpan={5} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
                       {!isLoading && filteredStudents.map((s) => (
                         <TableRow key={s.id}>
                           <TableCell className="font-medium">{s.name}</TableCell>
                           <TableCell>{s.email}</TableCell>
-                          <TableCell>{s.password}</TableCell>
                           <TableCell>{s.grade}</TableCell>
                           <TableCell>{teachers.find(t => t.id === s.teacherId)?.name || 'N/A'}</TableCell>
                           <TableCell className="text-right space-x-2">
@@ -495,7 +497,7 @@ export default function ManagementPage() {
                       ))}
                       {!isLoading && filteredStudents.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center text-muted-foreground">
+                          <TableCell colSpan={5} className="text-center text-muted-foreground">
                             No students found.
                           </TableCell>
                         </TableRow>
@@ -643,8 +645,8 @@ export default function ManagementPage() {
                     <Input id="editTeacherEmail" name="editTeacherEmail" type="email" defaultValue={editingTarget.data.email} required />
                   </div>
                    <div className="grid gap-1.5">
-                    <Label htmlFor="editTeacherPassword">Password</Label>
-                    <Input id="editTeacherPassword" name="editTeacherPassword" type="text" defaultValue={editingTarget.data.password} required />
+                    <Label htmlFor="editTeacherPassword">New Password (optional)</Label>
+                    <Input id="editTeacherPassword" name="editTeacherPassword" type="password" placeholder="Leave blank to keep current password" />
                   </div>
               </div>
             )}
@@ -660,8 +662,8 @@ export default function ManagementPage() {
                         <Input id="editStudentEmail" name="editStudentEmail" type="email" defaultValue={editingTarget.data.email} required />
                     </div>
                     <div className="grid gap-1.5">
-                        <Label htmlFor="editStudentPassword">Password</Label>
-                        <Input id="editStudentPassword" name="editStudentPassword" type="text" defaultValue={editingTarget.data.password} required />
+                        <Label htmlFor="editStudentPassword">New Password (optional)</Label>
+                        <Input id="editStudentPassword" name="editStudentPassword" type="password" placeholder="Leave blank to keep current password" />
                     </div>
                     <div className="grid gap-1.5">
                         <Label htmlFor="editStudentGrade">Grade</Label>

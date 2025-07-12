@@ -93,6 +93,7 @@ const generateId = (prefix: string) => `${prefix}${Date.now()}${Math.random().to
 // Teacher Services
 export const addTeacher = async (teacher: Omit<Teacher, 'id'>): Promise<Teacher> => {
   await delay(300);
+  mockTeachers = getFromStorage('mock_teachers', defaultTeachers);
   const newTeacher: Teacher = { ...teacher, id: generateId('t') };
   mockTeachers.push(newTeacher);
   saveToStorage('mock_teachers', mockTeachers);
@@ -116,6 +117,7 @@ export const getTeacherById = async (id: string): Promise<Teacher | null> => {
 
 export const updateTeacher = async (id: string, updates: Partial<Teacher>): Promise<Teacher | null> => {
   await delay(300);
+  mockTeachers = getFromStorage('mock_teachers', defaultTeachers);
   const teacherIndex = mockTeachers.findIndex(t => t.id === id);
   if (teacherIndex === -1) return null;
   mockTeachers[teacherIndex] = { ...mockTeachers[teacherIndex], ...updates };
@@ -125,9 +127,15 @@ export const updateTeacher = async (id: string, updates: Partial<Teacher>): Prom
 
 export const deleteTeacher = async (id: string): Promise<void> => {
   await delay(300);
+  mockTeachers = getFromStorage('mock_teachers', defaultTeachers);
+  mockStudents = getFromStorage('mock_students', defaultStudents);
+  mockCourses = getFromStorage('mock_courses', defaultCourses);
+
   mockTeachers = mockTeachers.filter(t => t.id !== id);
+  // Unassign students and courses from the deleted teacher
   mockStudents = mockStudents.map(s => s.teacherId === id ? { ...s, teacherId: '' } : s);
   mockCourses = mockCourses.map(c => c.teacherId === id ? { ...c, teacherId: '' } : c);
+  
   saveToStorage('mock_teachers', mockTeachers);
   saveToStorage('mock_students', mockStudents);
   saveToStorage('mock_courses', mockCourses);
@@ -141,6 +149,7 @@ export const getTeacherByEmail = async (email: string): Promise<Teacher | null> 
 // Student Services
 export const addStudent = async (student: Omit<Student, 'id'>): Promise<Student> => {
   await delay(300);
+  mockStudents = getFromStorage('mock_students', defaultStudents);
   const newStudent: Student = { ...student, id: generateId('s') };
   mockStudents.push(newStudent);
   saveToStorage('mock_students', mockStudents);
@@ -169,6 +178,7 @@ export const getStudentsForTeacher = async (teacherId: string): Promise<Student[
 
 export const updateStudent = async (id: string, updates: Partial<Student>): Promise<Student | null> => {
   await delay(300);
+  mockStudents = getFromStorage('mock_students', defaultStudents);
   const studentIndex = mockStudents.findIndex(s => s.id === id);
   if (studentIndex === -1) return null;
   mockStudents[studentIndex] = { ...mockStudents[studentIndex], ...updates };
@@ -178,6 +188,7 @@ export const updateStudent = async (id: string, updates: Partial<Student>): Prom
 
 export const deleteStudent = async (id: string): Promise<void> => {
   await delay(300);
+  mockStudents = getFromStorage('mock_students', defaultStudents);
   mockStudents = mockStudents.filter(s => s.id !== id);
   saveToStorage('mock_students', mockStudents);
 };
@@ -185,6 +196,7 @@ export const deleteStudent = async (id: string): Promise<void> => {
 // Course Services
 export const addCourse = async (course: Omit<Course, 'id'>): Promise<Course> => {
   await delay(300);
+  mockCourses = getFromStorage('mock_courses', defaultCourses);
   const newCourse: Course = { ...course, id: generateId('c') };
   mockCourses.push(newCourse);
   saveToStorage('mock_courses', mockCourses);
@@ -203,13 +215,15 @@ export const getCoursesForTeacher = async (teacherId: string): Promise<Course[]>
 
 export const getCoursesForStudent = async (studentId: string): Promise<Course[]> => {
     await delay(200);
-    const student = mockStudents.find(s => s.id === studentId);
+    const students = getFromStorage('mock_students', defaultStudents);
+    const student = students.find(s => s.id === studentId);
     if (!student) return [];
     return getFromStorage('mock_courses', defaultCourses).filter(c => c.teacherId === student.teacherId);
 }
 
 export const updateCourse = async (id: string, updates: Partial<Course>): Promise<Course | null> => {
   await delay(300);
+  mockCourses = getFromStorage('mock_courses', defaultCourses);
   const courseIndex = mockCourses.findIndex(c => c.id === id);
   if (courseIndex === -1) return null;
   mockCourses[courseIndex] = { ...mockCourses[courseIndex], ...updates };
@@ -219,6 +233,7 @@ export const updateCourse = async (id: string, updates: Partial<Course>): Promis
 
 export const deleteCourse = async (id: string): Promise<void> => {
   await delay(300);
+  mockCourses = getFromStorage('mock_courses', defaultCourses);
   mockCourses = mockCourses.filter(c => c.id !== id);
   saveToStorage('mock_courses', mockCourses);
 };
