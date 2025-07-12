@@ -10,7 +10,6 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import {content, role} from 'genkit/experimental/ai';
 
 const TutorStudentInputSchema = z.object({
   question: z.string().describe('The student\'s question.'),
@@ -32,17 +31,6 @@ export async function tutorStudent(input: TutorStudentInput): Promise<TutorStude
   return tutorStudentFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'tutorStudentPrompt',
-  input: {schema: TutorStudentInputSchema},
-  output: {schema: TutorStudentOutputSchema},
-  system: `You are Sahayak AI, an expert tutor for students. Your goal is to help students understand their course material.
-
-You will answer questions about the following topic: {{topic}}.
-
-Be friendly, encouraging, and clear in your explanations. If a question is outside the scope of the topic, gently guide them back to the subject.`,
-});
-
 const tutorStudentFlow = ai.defineFlow(
   {
     name: 'tutorStudentFlow',
@@ -50,14 +38,22 @@ const tutorStudentFlow = ai.defineFlow(
     outputSchema: TutorStudentOutputSchema,
   },
   async (input) => {
-    
-    const history = (input.history || []).map(h => content(role(h.role), h.content));
+    const history = (input.history || []).map(h => ({
+      role: h.role,
+      content: [{text: h.content}]
+    }));
 
-    const {output} = await prompt({
-        topic: input.topic,
-        question: input.question,
-    }, { history });
+    const {output} = await ai.generate({
+        prompt: input.question,
+        model: 'googleai/gemini-2.0-flash',
+        history,
+        system: `You are Sahayak AI, an expert tutor for students. Your goal is to help students understand their course material.
 
-    return output!;
+You will answer questions about the following topic: ${input.topic}.
+
+Be friendly, encouraging, and clear in your explanations. If a question is outside the scope of the topic, gently guide them back to the subject.`
+    });
+
+    return { answer: output.text! };
   }
 );
