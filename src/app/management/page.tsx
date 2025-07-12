@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,40 +8,94 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Users, Building, BookOpen, Activity, PlusCircle } from "lucide-react";
+import { Users, Building, BookOpen, Activity, PlusCircle, Loader2 } from "lucide-react";
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { addTeacher, getTeachers, getStudents, getCourses, addCourse, Teacher, Student, Course } from "@/lib/services";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function ManagementPage() {
   const { toast } = useToast();
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleFormSubmit = (e: React.FormEvent, type: string) => {
-    e.preventDefault();
-    toast({
-      title: "Action Simulated",
-      description: `The '${type}' action was successfully simulated.`,
-    });
-    (e.target as HTMLFormElement).reset();
+  const fetchDashboardData = async () => {
+    setIsLoading(true);
+    try {
+      const [teachersData, studentsData, coursesData] = await Promise.all([
+        getTeachers(),
+        getStudents(),
+        getCourses()
+      ]);
+      setTeachers(teachersData);
+      setStudents(studentsData);
+      setCourses(coursesData);
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load dashboard data.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
-  
-  const teachers = [
-    { name: "Jane Doe", email: "jane.doe@school.com", courses: 2 },
-    { name: "Robert Frost", email: "robert.frost@school.com", courses: 1 },
-  ];
 
-  const students = [
-    { name: "Alice Johnson", grade: "10th", teacher: "Jane Doe" },
-    { name: "Bob Williams", grade: "9th", teacher: "Robert Frost" },
-    { name: "Charlie Brown", grade: "10th", teacher: "Jane Doe" },
-  ];
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
-  const courses = [
-    { title: "Introduction to Algebra", modules: 3, teacher: "Jane Doe" },
-    { title: "World History", modules: 3, teacher: "Robert Frost" },
-    { title: "Fundamentals of Biology", modules: 3, teacher: "Jane Doe" },
-  ];
+  const handleAddTeacher = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    const name = (form.elements.namedItem("teacherName") as HTMLInputElement).value;
+    const email = (form.elements.namedItem("teacherEmail") as HTMLInputElement).value;
 
+    try {
+      await addTeacher({ name, email });
+      toast({
+        title: "Teacher Added",
+        description: `${name} has been added successfully.`,
+      });
+      form.reset();
+      fetchDashboardData(); // Refresh data
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not add the teacher.",
+      });
+    }
+  };
+
+  const handleCreateCourse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    const title = (form.elements.namedItem("courseTitle") as HTMLInputElement).value;
+    const description = (form.elements.namedItem("courseDesc") as HTMLTextAreaElement).value;
+    const modulesText = (form.elements.namedItem("courseModules") as HTMLTextAreaElement).value;
+    const teacherId = (form.elements.namedItem("courseTeacher") as HTMLInputElement).value;
+    
+    const modules = modulesText.split('\n').filter(m => m.trim() !== '');
+
+    try {
+      await addCourse({ title, description, modules, teacherId });
+      toast({
+        title: "Course Created",
+        description: `The course "${title}" has been created.`,
+      });
+      form.reset();
+      fetchDashboardData();
+    } catch (error) {
+       toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not create the course.",
+      });
+    }
+  };
 
   return (
     <DashboardPage title="Management Dashboard" role="Management">
@@ -56,7 +111,7 @@ export default function ManagementPage() {
             <CardHeader>
               <CardTitle>System Status</CardTitle>
               <CardDescription>
-                An overview of the platform's current state. (Simulated Data)
+                An overview of the platform's current state.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-3">
@@ -66,8 +121,7 @@ export default function ManagementPage() {
                   <Building className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">12</div>
-                  <p className="text-xs text-muted-foreground">+2 since last month</p>
+                  {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : <div className="text-2xl font-bold">{teachers.length}</div>}
                 </CardContent>
               </Card>
               <Card>
@@ -76,8 +130,7 @@ export default function ManagementPage() {
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">153</div>
-                  <p className="text-xs text-muted-foreground">+27 since last month</p>
+                  {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : <div className="text-2xl font-bold">{students.length}</div>}
                 </CardContent>
               </Card>
               <Card>
@@ -86,8 +139,7 @@ export default function ManagementPage() {
                   <BookOpen className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">8</div>
-                  <p className="text-xs text-muted-foreground">+1 since last month</p>
+                  {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : <div className="text-2xl font-bold">{courses.length}</div>}
                 </CardContent>
               </Card>
             </CardContent>
@@ -101,14 +153,14 @@ export default function ManagementPage() {
                 <CardTitle>Add a New Teacher</CardTitle>
               </CardHeader>
               <CardContent>
-                <form onSubmit={(e) => handleFormSubmit(e, "Add Teacher")} className="grid md:grid-cols-3 gap-4 items-end">
+                <form onSubmit={handleAddTeacher} className="grid md:grid-cols-3 gap-4 items-end">
                   <div className="grid gap-1.5">
                     <Label htmlFor="teacherName">Full Name</Label>
-                    <Input id="teacherName" placeholder="e.g., Jane Doe" required />
+                    <Input id="teacherName" name="teacherName" placeholder="e.g., Jane Doe" required />
                   </div>
                   <div className="grid gap-1.5">
                     <Label htmlFor="teacherEmail">Email Address</Label>
-                    <Input id="teacherEmail" type="email" placeholder="e.g., jane.doe@school.com" required />
+                    <Input id="teacherEmail" name="teacherEmail" type="email" placeholder="e.g., jane.doe@school.com" required />
                   </div>
                   <Button type="submit" className="w-full md:w-auto">
                     <PlusCircle className="mr-2 h-4 w-4" /> Add Teacher
@@ -126,18 +178,17 @@ export default function ManagementPage() {
                       <TableRow>
                         <TableHead>Name</TableHead>
                         <TableHead>Email</TableHead>
-                        <TableHead>Courses Assigned</TableHead>
                         <TableHead className="text-right">Action</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {teachers.map((t) => (
-                        <TableRow key={t.email}>
+                      {isLoading && <TableRow><TableCell colSpan={3} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
+                      {!isLoading && teachers.map((t) => (
+                        <TableRow key={t.id}>
                           <TableCell className="font-medium">{t.name}</TableCell>
                           <TableCell>{t.email}</TableCell>
-                          <TableCell>{t.courses}</TableCell>
                           <TableCell className="text-right">
-                            <Button variant="outline" size="sm">Edit</Button>
+                            <Button variant="outline" size="sm" disabled>Edit</Button>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -160,13 +211,14 @@ export default function ManagementPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {students.map((s) => (
-                        <TableRow key={s.name}>
+                       {isLoading && <TableRow><TableCell colSpan={4} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
+                      {!isLoading && students.map((s) => (
+                        <TableRow key={s.id}>
                           <TableCell className="font-medium">{s.name}</TableCell>
                           <TableCell>{s.grade}</TableCell>
-                          <TableCell>{s.teacher}</TableCell>
+                          <TableCell>{teachers.find(t => t.id === s.teacherId)?.name || 'N/A'}</TableCell>
                           <TableCell className="text-right">
-                             <Button variant="outline" size="sm">Edit</Button>
+                             <Button variant="outline" size="sm" disabled>Edit</Button>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -185,18 +237,29 @@ export default function ManagementPage() {
                 <CardDescription>Fill in the details to create a new course.</CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={(e) => handleFormSubmit(e, "Create Course")} className="space-y-4">
+                <form onSubmit={handleCreateCourse} className="space-y-4">
                   <div>
                     <Label htmlFor="courseTitle">Course Title</Label>
-                    <Input id="courseTitle" placeholder="e.g., Introduction to Algebra" required />
+                    <Input id="courseTitle" name="courseTitle" placeholder="e.g., Introduction to Algebra" required />
+                  </div>
+                   <div>
+                    <Label htmlFor="courseTeacher">Assign Teacher</Label>
+                    <Select name="courseTeacher" required>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a teacher" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {teachers.map(t => <SelectItem key={t.id} value={t.id!}>{t.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <Label htmlFor="courseDesc">Course Description</Label>
-                    <Textarea id="courseDesc" placeholder="A brief summary of the course content." required />
+                    <Textarea id="courseDesc" name="courseDesc" placeholder="A brief summary of the course content." required />
                   </div>
                   <div>
                     <Label htmlFor="courseModules">Modules (one per line)</Label>
-                    <Textarea id="courseModules" placeholder="Module 1: Basic Equations&#10;Module 2: Functions" rows={4} required />
+                    <Textarea id="courseModules" name="courseModules" placeholder="Module 1: Basic Equations&#10;Module 2: Functions" rows={4} required />
                   </div>
                   <Button type="submit" className="w-full">
                     <PlusCircle className="mr-2 h-4 w-4" /> Create Course
@@ -220,13 +283,14 @@ export default function ManagementPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {courses.map((c) => (
-                        <TableRow key={c.title}>
+                      {isLoading && <TableRow><TableCell colSpan={4} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
+                      {!isLoading && courses.map((c) => (
+                        <TableRow key={c.id}>
                           <TableCell className="font-medium">{c.title}</TableCell>
-                          <TableCell>{c.teacher}</TableCell>
-                          <TableCell>{c.modules}</TableCell>
+                          <TableCell>{teachers.find(t => t.id === c.teacherId)?.name || 'N/A'}</TableCell>
+                          <TableCell>{c.modules.length}</TableCell>
                           <TableCell className="text-right">
-                            <Button variant="outline" size="sm">Edit</Button>
+                            <Button variant="outline" size="sm" disabled>Edit</Button>
                           </TableCell>
                         </TableRow>
                       ))}
