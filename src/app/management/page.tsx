@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Users, Building, BookOpen, Activity, PlusCircle, Loader2, Trash2, Edit } from "lucide-react";
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
-import { addTeacher, getTeachers, getStudents, getCourses, addCourse, Teacher, Student, Course, addStudent, deleteTeacher, deleteStudent, deleteCourse, updateTeacher, updateStudent } from "@/lib/services";
+import { addTeacher, getTeachers, getStudents, getCourses, addCourse, Teacher, Student, Course, addStudent, deleteTeacher, deleteStudent, deleteCourse, updateTeacher, updateStudent, updateCourse } from "@/lib/services";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog,
@@ -35,7 +35,7 @@ import {
 
 
 type DeletionTarget = { type: 'teacher' | 'student' | 'course', id: string, name: string } | null;
-type EditingTarget = { type: 'teacher', data: Teacher } | { type: 'student', data: Student } | null;
+type EditingTarget = { type: 'teacher', data: Teacher } | { type: 'student', data: Student } | { type: 'course', data: Course } | null;
 
 export default function ManagementPage() {
   const { toast } = useToast();
@@ -74,7 +74,7 @@ export default function ManagementPage() {
 
   useEffect(() => {
     fetchDashboardData();
-  }, [toast]);
+  }, []);
 
   const handleAddTeacher = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -190,7 +190,7 @@ export default function ManagementPage() {
     }
   };
 
-  const handleUpdateUser = async (e: React.FormEvent) => {
+  const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingTarget) return;
 
@@ -216,18 +216,29 @@ export default function ManagementPage() {
                 teacherId: (form.elements.namedItem("editStudentTeacher") as HTMLSelectElement).value,
             };
             await updateStudent(updatedData.id, updatedData);
+        } else if (editingTarget.type === 'course') {
+           const modulesText = (form.elements.namedItem("editCourseModules") as HTMLTextAreaElement).value;
+           const modules = modulesText.split('\n').filter(m => m.trim() !== '');
+           const updatedData: Course = {
+               ...editingTarget.data,
+               title: (form.elements.namedItem("editCourseTitle") as HTMLInputElement).value,
+               description: (form.elements.namedItem("editCourseDesc") as HTMLTextAreaElement).value,
+               teacherId: (form.elements.namedItem("editCourseTeacher") as HTMLSelectElement).value,
+               modules: modules,
+           };
+           await updateCourse(updatedData.id, updatedData);
         }
         
         toast({
             title: "Update Successful",
-            description: "User information has been updated.",
+            description: "Information has been updated.",
         });
         fetchDashboardData();
     } catch (error) {
          toast({
             variant: "destructive",
             title: "Error",
-            description: `Could not update the user.`,
+            description: `Could not update the ${editingTarget.type}.`,
         });
     } finally {
         setIsUpdating(false);
@@ -489,7 +500,10 @@ export default function ManagementPage() {
                           <TableCell className="font-medium">{c.title}</TableCell>
                           <TableCell>{teachers.find(t => t.id === c.teacherId)?.name || 'N/A'}</TableCell>
                           <TableCell>{c.modules.length}</TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-right space-x-2">
+                             <Button variant="outline" size="sm" onClick={() => setEditingTarget({ type: 'course', data: c })}>
+                                <Edit className="h-4 w-4" />
+                            </Button>
                              <Button variant="destructive" size="sm" onClick={() => setDeletionTarget({ type: 'course', id: c.id!, name: c.title })}>
                                 <Trash2 className="h-4 w-4" />
                              </Button>
@@ -525,11 +539,11 @@ export default function ManagementPage() {
        {/* Edit Dialog */}
        <Dialog open={!!editingTarget} onOpenChange={() => setEditingTarget(null)}>
         <DialogContent>
-          <form onSubmit={handleUpdateUser}>
+          <form onSubmit={handleUpdate}>
             <DialogHeader>
-              <DialogTitle>Edit {editingTarget?.type}</DialogTitle>
+              <DialogTitle>Edit {editingTarget?.type?.charAt(0).toUpperCase()}{editingTarget?.type?.slice(1)}</DialogTitle>
               <DialogDescription>
-                 Update the details for {editingTarget?.data.name}.
+                 Update the details for {editingTarget?.data.name || editingTarget?.data.title}.
               </DialogDescription>
             </DialogHeader>
 
@@ -566,11 +580,11 @@ export default function ManagementPage() {
                     </div>
                     <div className="grid gap-1.5">
                         <Label htmlFor="editStudentGrade">Grade</Label>
-                        <Input id="editStudentGrade" name="editStudentGrade" defaultValue={editingTarget.data.grade} required />
+                        <Input id="editStudentGrade" name="editStudentGrade" defaultValue={(editingTarget.data as Student).grade} required />
                     </div>
                     <div className="grid gap-1.5">
                         <Label htmlFor="editStudentTeacher">Assign Teacher</Label>
-                        <Select name="editStudentTeacher" required defaultValue={editingTarget.data.teacherId}>
+                        <Select name="editStudentTeacher" required defaultValue={(editingTarget.data as Student).teacherId}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select a teacher" />
                             </SelectTrigger>
@@ -581,6 +595,35 @@ export default function ManagementPage() {
                     </div>
                 </div>
             )}
+            
+            {editingTarget?.type === 'course' && (
+                <div className="grid gap-4 py-4">
+                     <div className="grid gap-1.5">
+                        <Label htmlFor="editCourseTitle">Course Title</Label>
+                        <Input id="editCourseTitle" name="editCourseTitle" defaultValue={editingTarget.data.title} required />
+                    </div>
+                     <div className="grid gap-1.5">
+                        <Label htmlFor="editCourseTeacher">Assign Teacher</Label>
+                        <Select name="editCourseTeacher" required defaultValue={(editingTarget.data as Course).teacherId}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a teacher" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {teachers.map(t => <SelectItem key={t.id} value={t.id!}>{t.name}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="grid gap-1.5">
+                       <Label htmlFor="editCourseDesc">Course Description</Label>
+                       <Textarea id="editCourseDesc" name="editCourseDesc" defaultValue={(editingTarget.data as Course).description} required />
+                    </div>
+                    <div className="grid gap-1.5">
+                        <Label htmlFor="editCourseModules">Modules (one per line)</Label>
+                        <Textarea id="editCourseModules" name="editCourseModules" defaultValue={(editingTarget.data as Course).modules.join('\n')} rows={4} required />
+                    </div>
+                </div>
+            )}
+
 
             <DialogFooter>
                 <DialogClose asChild>
