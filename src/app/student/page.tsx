@@ -12,28 +12,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
-import { getTutorResponse, getCertificate, GenerateQuizQuestionsOutput } from "@/lib/actions";
-import { getCoursesForStudent, Course, Student, getQuizForCourse, getAttendanceForStudent, AttendanceRecord, saveQuizResult } from "@/lib/services";
+import { getCertificate } from "@/lib/actions";
+import { getCoursesForStudent, Course, Student } from "@/lib/services";
 import { useToast } from "@/hooks/use-toast";
 import { getSession } from "@/lib/authService";
 import { Progress } from "@/components/ui/progress";
 import { format } from "date-fns";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
 
-
-type ChatMessage = {
-  author: "user" | "bot";
-  message: string;
-};
-
-type QuizAnswers = Record<number, string>;
-type QuizResult = {
-    score: number;
-    total: number;
-    answers: QuizAnswers;
-} | null;
 
 // Simulate progress for each course
 const useSimulatedProgress = (courses: Course[]) => {
