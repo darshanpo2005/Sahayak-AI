@@ -1,5 +1,7 @@
 // Mock data services. No database connection needed.
 
+import type { GenerateQuizQuestionsOutput } from "./actions";
+
 export interface Teacher {
   id: string;
   name: string;
@@ -74,6 +76,8 @@ const getFromStorage = <T>(key: string, defaultValue: T): T => {
             return defaultValue;
         }
     }
+    // If nothing is in storage, set the default value
+    saveToStorage(key, defaultValue);
     return defaultValue;
 }
 
@@ -237,5 +241,20 @@ export const deleteCourse = async (id: string): Promise<void> => {
   mockCourses = mockCourses.filter(c => c.id !== id);
   saveToStorage('mock_courses', mockCourses);
 };
+
+// Quiz Services
+export const saveQuizForCourse = async (courseId: string, quizData: GenerateQuizQuestionsOutput): Promise<void> => {
+    await delay(100);
+    const quizzes = getFromStorage<Record<string, GenerateQuizQuestionsOutput>>('mock_quizzes', {});
+    quizzes[courseId] = quizData;
+    saveToStorage('mock_quizzes', quizzes);
+}
+
+export const getQuizForCourse = async (courseId: string): Promise<GenerateQuizQuestionsOutput | null> => {
+    await delay(100);
+    const quizzes = getFromStorage<Record<string, GenerateQuizQuestionsOutput>>('mock_quizzes', {});
+    return quizzes[courseId] || null;
+}
+
 
 export const isFirebaseConfigured = true;

@@ -18,9 +18,17 @@ import { Lightbulb, HelpCircle, BarChart3, Bot, Sparkles, Loader2, CalendarCheck
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { getStudents, Student, Teacher } from "@/lib/services";
+import { getStudents, Student, Teacher, saveQuizForCourse } from "@/lib/services";
 import { getSession } from "@/lib/authService";
 import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { getCoursesForTeacher, Course } from "@/lib/services";
 
 export default function TeacherPage() {
   const { toast } = useToast();
@@ -37,6 +45,10 @@ export default function TeacherPage() {
   
   const [students, setStudents] = useState<Student[]>([]);
   const [isStudentsLoading, setIsStudentsLoading] = useState(true);
+  
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [selectedCourseForQuiz, setSelectedCourseForQuiz] = useState<string>("");
+
 
   useEffect(() => {
     const currentSession = getSession();
@@ -48,23 +60,33 @@ export default function TeacherPage() {
   }, [router]);
 
   useEffect(() => {
-    const fetchStudents = async () => {
+    const fetchInitialData = async () => {
+      if (!session) return;
       setIsStudentsLoading(true);
       try {
-        const studentsData = await getStudents();
+        const [studentsData, coursesData] = await Promise.all([
+           getStudents(),
+           getCoursesForTeacher(session.user.id)
+        ]);
         setStudents(studentsData);
+        setCourses(coursesData);
+        if (coursesData.length > 0) {
+          setSelectedCourseForQuiz(coursesData[0].id);
+        }
       } catch (error) {
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Failed to load students.",
+          description: "Failed to load initial dashboard data.",
         });
       } finally {
         setIsStudentsLoading(false);
       }
     };
-    fetchStudents();
-  }, [toast]);
+    if (session) {
+      fetchInitialData();
+    }
+  }, [session, toast]);
 
   const handleLessonPlanSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -96,6 +118,11 @@ export default function TeacherPage() {
     const result = await getQuiz({ topic, numQuestions });
     if (result.success) {
       setQuiz(result.data);
+      await saveQuizForCourse(selectedCourseForQuiz, result.data);
+      toast({
+        title: "Quiz Generated & Saved",
+        description: `Quiz for ${courses.find(c => c.id === selectedCourseForQuiz)?.title} has been created.`,
+      });
     } else {
       setQuizError(result.error);
       toast({
@@ -253,10 +280,26 @@ export default function TeacherPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Generate Quiz Questions</CardTitle>
-                <CardDescription>Provide a topic and number of questions to generate a quiz.</CardDescription>
+                <CardDescription>Provide a topic and number of questions to generate a quiz for a specific course.</CardDescription>
               </CardHeader>
               <form onSubmit={handleQuizSubmit}>
                 <CardContent className="space-y-4">
+                    <div>
+                      <Label htmlFor="course-select">Course</Label>
+                       <Select 
+                        name="course" 
+                        required 
+                        value={selectedCourseForQuiz}
+                        onValueChange={setSelectedCourseForQuiz}
+                      >
+                        <SelectTrigger id="course-select">
+                          <SelectValue placeholder="Select a course" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {courses.map(c => <SelectItem key={c.id} value={c.id!}>{c.title}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   <div>
                     <Label htmlFor="topic">Topic</Label>
                     <Input id="topic" name="topic" placeholder="e.g., The French Revolution" required />
@@ -267,11 +310,11 @@ export default function TeacherPage() {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button type="submit" disabled={isQuizLoading} className="w-full">
+                  <Button type="submit" disabled={isQuizLoading || !selectedCourseForQuiz} className="w-full">
                     {isQuizLoading ? (
                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...</>
                     ) : (
-                      <><Sparkles className="mr-2 h-4 w-4" /> Generate Questions</>
+                      <><Sparkles className="mr-2 h-4 w-4" /> Generate & Save Quiz</>
                     )}
                   </Button>
                 </CardFooter>

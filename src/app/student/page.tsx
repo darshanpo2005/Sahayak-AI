@@ -8,23 +8,34 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Book, MessageSquare, Send, Bot, Loader2, CalendarCheck, Film, Award, CheckCircle, User, Video } from "lucide-react";
+import { Book, MessageSquare, Send, Bot, Loader2, CalendarCheck, Film, Award, CheckCircle, User, Video, HelpCircle, XCircle, Trophy } from "lucide-react";
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
-import { getTutorResponse, getCertificate } from "@/lib/actions";
-import { getCoursesForStudent, Course, Student } from "@/lib/services";
+import { getTutorResponse, getCertificate, GenerateQuizQuestionsOutput } from "@/lib/actions";
+import { getCoursesForStudent, Course, Student, getQuizForCourse } from "@/lib/services";
 import { useToast } from "@/hooks/use-toast";
 import { getSession } from "@/lib/authService";
 import { Progress } from "@/components/ui/progress";
 import { format } from "date-fns";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+
 
 type ChatMessage = {
   author: "user" | "bot";
   message: string;
 };
+
+type QuizAnswers = Record<number, string>;
+type QuizResult = {
+    score: number;
+    total: number;
+    answers: QuizAnswers;
+} | null;
 
 // Simulate progress for each course
 const useSimulatedProgress = (courses: Course[]) => {
@@ -59,6 +70,13 @@ export default function StudentPage() {
   const courseProgress = useSimulatedProgress(courses);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
+  // Quiz state
+  const [activeCourseId, setActiveCourseId] = useState<string | null>(null);
+  const [quizData, setQuizData] = useState<GenerateQuizQuestionsOutput | null>(null);
+  const [isLoadingQuiz, setIsLoadingQuiz] = useState(false);
+  const [quizAnswers, setQuizAnswers] = useState<QuizAnswers>({});
+  const [quizResult, setQuizResult] = useState<QuizResult>(null);
+
 
   useEffect(() => {
     const currentSession = getSession();
@@ -77,7 +95,8 @@ export default function StudentPage() {
         const coursesData = await getCoursesForStudent(session.user.id);
         setCourses(coursesData);
         if (coursesData.length > 0) {
-            setActiveCourseTopic(coursesData[0].title); 
+            setActiveCourseTopic(coursesData[0].title);
+            setActiveCourseId(coursesData[0].id);
         }
       } catch (error) {
         toast({
@@ -93,6 +112,25 @@ export default function StudentPage() {
       fetchCourses();
     }
   }, [session, toast]);
+
+  useEffect(() => {
+    const fetchQuiz = async () => {
+        if (!activeCourseId) return;
+        setIsLoadingQuiz(true);
+        setQuizData(null);
+        setQuizResult(null);
+        setQuizAnswers({});
+        try {
+            const quiz = await getQuizForCourse(activeCourseId);
+            setQuizData(quiz);
+        } catch (error) {
+            toast({ variant: "destructive", title: "Could not load quiz."})
+        } finally {
+            setIsLoadingQuiz(false);
+        }
+    }
+    fetchQuiz();
+  }, [activeCourseId, toast]);
   
 
   const attendance = [
@@ -154,6 +192,25 @@ export default function StudentPage() {
     }
     setIsGeneratingCert(null);
   }
+
+  const handleQuizAnswerChange = (questionIndex: number, answer: string) => {
+    setQuizAnswers(prev => ({ ...prev, [questionIndex]: answer }));
+  };
+
+  const handleQuizSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quizData) return;
+
+    let score = 0;
+    quizData.questions.forEach((q, index) => {
+        if (q.correctAnswer === quizAnswers[index]) {
+            score++;
+        }
+    });
+
+    setQuizResult({ score, total: quizData.questions.length, answers: quizAnswers });
+    toast({ title: "Quiz Submitted!", description: `You scored ${score} out of ${quizData.questions.length}`});
+  }
   
     useEffect(() => {
         // Auto-scroll to the bottom of the chat
@@ -176,8 +233,9 @@ export default function StudentPage() {
   return (
     <DashboardPage title="Student Dashboard" role="Student">
       <Tabs defaultValue="courses">
-        <TabsList className="mb-6 grid grid-cols-1 sm:grid-cols-3 w-full sm:w-auto">
+        <TabsList className="mb-6 grid grid-cols-1 sm:grid-cols-4 w-full sm:w-auto">
           <TabsTrigger value="courses"><Book className="mr-2 h-4 w-4" />My Courses</TabsTrigger>
+          <TabsTrigger value="quizzes"><HelpCircle className="mr-2 h-4 w-4" />Quizzes</TabsTrigger>
           <TabsTrigger value="attendance"><CalendarCheck className="mr-2 h-4 w-4" />Attendance</TabsTrigger>
           <TabsTrigger value="qna"><MessageSquare className="mr-2 h-4 w-4" />AI Tutor</TabsTrigger>
         </TabsList>
@@ -199,6 +257,7 @@ export default function StudentPage() {
                         const selectedCourse = courses.find(c => c.id === value);
                         if (selectedCourse) {
                           setActiveCourseTopic(selectedCourse.title);
+                          setActiveCourseId(selectedCourse.id!);
                           // Clear chat history when switching courses
                           setChatHistory([]);
                         }
@@ -280,6 +339,85 @@ export default function StudentPage() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+        
+        <TabsContent value="quizzes">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Quiz for: {activeCourseTopic}</CardTitle>
+                    <CardDescription>Test your knowledge on the material from this course.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {isLoadingQuiz && (
+                         <div className="flex justify-center items-center h-40">
+                            <Loader2 className="h-8 w-8 animate-spin" />
+                         </div>
+                    )}
+                    {!isLoadingQuiz && !quizData && (
+                        <div className="flex flex-col items-center justify-center h-40 text-center text-muted-foreground">
+                            <HelpCircle className="w-12 h-12 mb-4" />
+                            <p className="font-semibold">No Quiz Available</p>
+                            <p className="text-sm">There is no quiz available for this course yet. Check back later!</p>
+                        </div>
+                    )}
+                    {!isLoadingQuiz && quizData && !quizResult &&(
+                        <form onSubmit={handleQuizSubmit} className="space-y-8">
+                            {quizData.questions.map((q, qIndex) => (
+                                <div key={qIndex} className="p-4 border rounded-lg">
+                                    <p className="font-semibold mb-4">{qIndex + 1}. {q.question}</p>
+                                    <RadioGroup
+                                        onValueChange={(value) => handleQuizAnswerChange(qIndex, value)}
+                                        value={quizAnswers[qIndex]}
+                                        className="space-y-2"
+                                    >
+                                        {q.options.map((option, oIndex) => (
+                                            <div key={oIndex} className="flex items-center space-x-2">
+                                                <RadioGroupItem value={option} id={`q${qIndex}-o${oIndex}`} />
+                                                <Label htmlFor={`q${qIndex}-o${oIndex}`}>{option}</Label>
+                                            </div>
+                                        ))}
+                                    </RadioGroup>
+                                </div>
+                            ))}
+                            <Button type="submit" className="w-full" disabled={Object.keys(quizAnswers).length !== quizData.questions.length}>
+                                Submit Quiz
+                            </Button>
+                        </form>
+                    )}
+                    {quizResult && quizData && (
+                        <div className="text-center space-y-6">
+                            <Card>
+                               <CardHeader>
+                                 <CardTitle>Quiz Results</CardTitle>
+                               </CardHeader>
+                               <CardContent className="space-y-4">
+                                   <div className="flex flex-col items-center">
+                                      <Trophy className="w-16 h-16 text-yellow-500 mb-4" />
+                                      <p className="text-2xl font-bold">You scored</p>
+                                      <p className="text-5xl font-extrabold text-primary">{quizResult.score} / {quizResult.total}</p>
+                                      <Progress value={(quizResult.score / quizResult.total) * 100} className="w-full max-w-sm mt-4"/>
+                                   </div>
+                                    <Button onClick={() => setQuizResult(null)}>Try Again</Button>
+                               </CardContent>
+                            </Card>
+                            <div className="space-y-4 text-left">
+                                {quizData.questions.map((q, qIndex) => {
+                                    const userAnswer = quizResult.answers[qIndex];
+                                    const isCorrect = userAnswer === q.correctAnswer;
+                                    return (
+                                        <div key={qIndex} className={cn("p-4 border rounded-lg", isCorrect ? "border-green-500/50 bg-green-500/10" : "border-red-500/50 bg-red-500/10")}>
+                                            <p className="font-semibold">{qIndex + 1}. {q.question}</p>
+                                            <p className="text-sm mt-2">Your answer: <span className={cn("font-medium", isCorrect ? "text-green-700" : "text-red-700")}>{userAnswer}</span></p>
+                                            {!isCorrect && <p className="text-sm">Correct answer: <span className="font-medium text-green-700">{q.correctAnswer}</span></p>}
+                                        </div>
+                                    )
+                                })}
+                            </div>
+
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
         </TabsContent>
         
         <TabsContent value="attendance">
