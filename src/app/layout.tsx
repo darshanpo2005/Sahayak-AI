@@ -14,17 +14,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className="antialiased">
-      <body>
+    <html lang="en" suppressHydrationWarning>
+      <body className="font-sans antialiased">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-            <main className="flex flex-col min-h-screen bg-background font-sans">
-              {children}
-            </main>
+            {children}
             <Toaster />
         </ThemeProvider>
       </body>
