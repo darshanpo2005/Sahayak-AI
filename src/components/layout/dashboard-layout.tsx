@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
@@ -123,7 +124,9 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
   const currentNavItems = navItems[role];
 
   const pageTitle = useMemo(() => {
-    const activeItem = currentNavItems.find(item => item.href === pathname);
+    const activeItem = currentNavItems.find(item => pathname.startsWith(item.href));
+    if (pathname === '/student') return 'Dashboard';
+    if (pathname === '/teacher') return 'Dashboard';
     return activeItem?.label || roleDetails[role].name + " Dashboard";
   }, [pathname, currentNavItems, role]);
 
@@ -161,7 +164,7 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
               <SidebarMenuItem key={item.href}>
                 <Link href={item.href}>
                   <SidebarMenuButton
-                    isActive={pathname === item.href}
+                    isActive={pathname.startsWith(item.href)}
                     tooltip={{ children: item.label }}
                   >
                     <item.icon />
