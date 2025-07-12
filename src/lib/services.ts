@@ -30,6 +30,12 @@ export interface Course {
   }
 }
 
+export interface AttendanceRecord {
+    studentId: string;
+    date: string; // YYYY-MM-DD
+    status: 'Present' | 'Absent' | 'Late';
+}
+
 // Default Mock Database
 const defaultTeachers: Teacher[] = [
   { id: 't1', name: 'Jane Doe', email: 'jane.doe@school.com', password: 'password123' },
@@ -63,6 +69,15 @@ const defaultCourses: Course[] = [
   },
 ];
 
+const defaultAttendance: AttendanceRecord[] = [
+    { studentId: 's1', date: '2024-07-22', status: 'Present' },
+    { studentId: 's1', date: '2024-07-21', status: 'Present' },
+    { studentId: 's1', date: '2024-07-20', status: 'Absent' },
+    { studentId: 's1', date: '2024-07-19', status: 'Present' },
+    { studentId: 's1', date: '2024-07-18', status: 'Late' },
+];
+
+
 const getFromStorage = <T>(key: string, defaultValue: T): T => {
     if (typeof window === 'undefined') {
         return defaultValue;
@@ -90,6 +105,7 @@ const saveToStorage = <T>(key: string, value: T) => {
 let mockTeachers: Teacher[] = getFromStorage('mock_teachers', defaultTeachers);
 let mockStudents: Student[] = getFromStorage('mock_students', defaultStudents);
 let mockCourses: Course[] = getFromStorage('mock_courses', defaultCourses);
+let mockAttendance: AttendanceRecord[] = getFromStorage('mock_attendance', defaultAttendance);
 
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 const generateId = (prefix: string) => `${prefix}${Date.now()}${Math.random().toString(36).substring(2, 5)}`;
@@ -254,6 +270,29 @@ export const getQuizForCourse = async (courseId: string): Promise<GenerateQuizQu
     await delay(100);
     const quizzes = getFromStorage<Record<string, GenerateQuizQuestionsOutput>>('mock_quizzes', {});
     return quizzes[courseId] || null;
+}
+
+// Attendance Services
+export const saveAttendance = async (records: AttendanceRecord[]): Promise<void> => {
+    await delay(200);
+    mockAttendance = getFromStorage('mock_attendance', defaultAttendance);
+    const today = new Date().toISOString().split('T')[0]; // Get date in YYYY-MM-DD format
+    
+    // Remove any existing records for today for the given students to avoid duplicates
+    const studentIds = records.map(r => r.studentId);
+    const otherRecords = mockAttendance.filter(r => !(r.date === today && studentIds.includes(r.studentId)));
+    
+    // Add the new records
+    mockAttendance = [...otherRecords, ...records];
+    saveToStorage('mock_attendance', mockAttendance);
+}
+
+export const getAttendanceForStudent = async (studentId: string): Promise<AttendanceRecord[]> => {
+    await delay(200);
+    mockAttendance = getFromStorage('mock_attendance', defaultAttendance);
+    return mockAttendance
+        .filter(r => r.studentId === studentId)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
 

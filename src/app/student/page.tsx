@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
 import { getTutorResponse, getCertificate, GenerateQuizQuestionsOutput } from "@/lib/actions";
-import { getCoursesForStudent, Course, Student, getQuizForCourse } from "@/lib/services";
+import { getCoursesForStudent, Course, Student, getQuizForCourse, getAttendanceForStudent, AttendanceRecord } from "@/lib/services";
 import { useToast } from "@/hooks/use-toast";
 import { getSession } from "@/lib/authService";
 import { Progress } from "@/components/ui/progress";
@@ -76,6 +76,10 @@ export default function StudentPage() {
   const [isLoadingQuiz, setIsLoadingQuiz] = useState(false);
   const [quizAnswers, setQuizAnswers] = useState<QuizAnswers>({});
   const [quizResult, setQuizResult] = useState<QuizResult>(null);
+  
+  // Attendance state
+  const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+  const [isLoadingAttendance, setIsLoadingAttendance] = useState(true);
 
 
   useEffect(() => {
@@ -88,28 +92,37 @@ export default function StudentPage() {
   }, [router]);
 
   useEffect(() => {
-    const fetchCourses = async () => {
+    const fetchStudentData = async () => {
       if (!session) return;
       setIsLoadingCourses(true);
+      setIsLoadingAttendance(true);
       try {
-        const coursesData = await getCoursesForStudent(session.user.id);
+        const [coursesData, attendanceData] = await Promise.all([
+          getCoursesForStudent(session.user.id),
+          getAttendanceForStudent(session.user.id)
+        ]);
+        
         setCourses(coursesData);
         if (coursesData.length > 0) {
             setActiveCourseTopic(coursesData[0].title);
             setActiveCourseId(coursesData[0].id);
         }
+
+        setAttendance(attendanceData);
+
       } catch (error) {
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Failed to load courses.",
+          description: "Failed to load dashboard data.",
         });
       } finally {
         setIsLoadingCourses(false);
+        setIsLoadingAttendance(false);
       }
     };
     if (session) {
-      fetchCourses();
+      fetchStudentData();
     }
   }, [session, toast]);
 
@@ -131,15 +144,6 @@ export default function StudentPage() {
     }
     fetchQuiz();
   }, [activeCourseId, toast]);
-  
-
-  const attendance = [
-    { date: "2024-07-22", status: "Present" },
-    { date: "2024-07-21", status: "Present" },
-    { date: "2024-07-20", status: "Absent" },
-    { date: "2024-07-19", status: "Present" },
-    { date: "2024-07-18", status: "Late" },
-  ];
 
   const handleQuestionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -424,7 +428,7 @@ export default function StudentPage() {
           <Card>
             <CardHeader>
               <CardTitle>My Attendance</CardTitle>
-              <CardDescription>Here is a summary of your attendance record. (Simulated)</CardDescription>
+              <CardDescription>Here is a summary of your attendance record.</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
@@ -435,16 +439,30 @@ export default function StudentPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {attendance.map((record) => (
-                    <TableRow key={record.date}>
-                      <TableCell className="font-medium">{record.date}</TableCell>
-                      <TableCell className="text-right">
-                        <Badge variant={record.status === "Present" ? "secondary" : record.status === "Absent" ? "destructive" : "default"}>
-                          {record.status}
-                        </Badge>
+                  {isLoadingAttendance ? (
+                     <TableRow>
+                        <TableCell colSpan={2} className="text-center">
+                           <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                        </TableCell>
+                      </TableRow>
+                  ) : attendance.length > 0 ? (
+                    attendance.map((record) => (
+                        <TableRow key={record.date}>
+                        <TableCell className="font-medium">{format(new Date(record.date), "PPP")}</TableCell>
+                        <TableCell className="text-right">
+                            <Badge variant={record.status === "Present" ? "secondary" : record.status === "Absent" ? "destructive" : "default"}>
+                            {record.status}
+                            </Badge>
+                        </TableCell>
+                        </TableRow>
+                    ))
+                  ) : (
+                     <TableRow>
+                      <TableCell colSpan={2} className="text-center text-muted-foreground">
+                        No attendance records found.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </CardContent>

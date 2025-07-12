@@ -18,7 +18,7 @@ import { Lightbulb, HelpCircle, BarChart3, Bot, Sparkles, Loader2, CalendarCheck
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { getStudents, Student, Teacher, saveQuizForCourse } from "@/lib/services";
+import { getStudentsForTeacher, Student, Teacher, saveQuizForCourse, saveAttendance, AttendanceRecord } from "@/lib/services";
 import { getSession } from "@/lib/authService";
 import { cn } from "@/lib/utils";
 import {
@@ -48,6 +48,8 @@ export default function TeacherPage() {
   
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourseForQuiz, setSelectedCourseForQuiz] = useState<string>("");
+  
+  const [isSubmittingAttendance, setIsSubmittingAttendance] = useState(false);
 
 
   useEffect(() => {
@@ -65,7 +67,7 @@ export default function TeacherPage() {
       setIsStudentsLoading(true);
       try {
         const [studentsData, coursesData] = await Promise.all([
-           getStudents(),
+           getStudentsForTeacher(session.user.id),
            getCoursesForTeacher(session.user.id)
         ]);
         setStudents(studentsData);
@@ -134,21 +136,50 @@ export default function TeacherPage() {
     setIsQuizLoading(false);
   };
   
-  const handleAttendanceSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleAttendanceSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    toast({
-      title: "Attendance Submitted",
-      description: "Today's attendance has been successfully recorded.",
+    setIsSubmittingAttendance(true);
+    const formData = new FormData(e.currentTarget);
+    const today = new Date().toISOString().split('T')[0];
+    const records: AttendanceRecord[] = [];
+
+    students.forEach(student => {
+        const status = formData.get(`attendance-${student.id}`) as 'Present' | 'Absent' | 'Late' | null;
+        if(status) {
+            records.push({
+                studentId: student.id,
+                date: today,
+                status: status
+            });
+        }
     });
+
+    try {
+        await saveAttendance(records);
+        toast({
+            title: "Attendance Submitted",
+            description: "Today's attendance has been successfully recorded.",
+        });
+    } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "Submission Failed",
+            description: "Could not save attendance data.",
+        });
+    } finally {
+        setIsSubmittingAttendance(false);
+    }
   };
 
   const studentProgress = students.map(student => ({
+      id: student.id,
       name: student.name,
-      progress: Math.floor(Math.random() * 60) + 40, // Simulated progress
+      progress: Math.floor(student.id.charCodeAt(1) % 5) * 20 + 10, // Simulated but consistent progress
       get status() {
-        if (this.progress > 90) return "Excelling";
-        if (this.progress > 70) return "On Track";
-        return "Needs Help";
+        if (this.progress > 80) return "Excelling";
+        if (this.progress > 60) return "On Track";
+        if (this.progress > 40) return "Needs Attention";
+        return "At Risk";
       }
   }));
 
@@ -174,7 +205,7 @@ export default function TeacherPage() {
           <Card>
             <CardHeader>
               <CardTitle>Take Attendance</CardTitle>
-              <CardDescription>Mark student attendance for {new Date().toLocaleDateString()}.</CardDescription>
+              <CardDescription>Mark student attendance for {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.</CardDescription>
             </CardHeader>
             <form onSubmit={handleAttendanceSubmit}>
               <CardContent>
@@ -191,28 +222,38 @@ export default function TeacherPage() {
                       <TableRow key={student.id}>
                         <TableCell className="font-medium">{student.name}</TableCell>
                         <TableCell className="text-right">
-                          <RadioGroup defaultValue="present" name={`attendance-${student.name}`} className="justify-end gap-4 sm:gap-6 flex flex-row">
+                          <RadioGroup defaultValue="Present" name={`attendance-${student.id}`} className="justify-end gap-4 sm:gap-6 flex flex-row">
                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="present" id={`${student.name}-present`} />
-                                <Label htmlFor={`${student.name}-present`}>Present</Label>
+                                <RadioGroupItem value="Present" id={`${student.id}-present`} />
+                                <Label htmlFor={`${student.id}-present`}>Present</Label>
                               </div>
                               <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="absent" id={`${student.name}-absent`} />
-                                <Label htmlFor={`${student.name}-absent`}>Absent</Label>
+                                <RadioGroupItem value="Absent" id={`${student.id}-absent`} />
+                                <Label htmlFor={`${student.id}-absent`}>Absent</Label>
                               </div>
                               <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="late" id={`${student.name}-late`} />
-                                <Label htmlFor={`${student.name}-late`}>Late</Label>
+                                <RadioGroupItem value="Late" id={`${student.id}-late`} />
+                                <Label htmlFor={`${student.id}-late`}>Late</Label>
                               </div>
                           </RadioGroup>
                         </TableCell>
                       </TableRow>
                     ))}
+                    {!isStudentsLoading && students.length === 0 && (
+                        <TableRow>
+                            <TableCell colSpan={2} className="text-center text-muted-foreground">
+                                You have no students assigned to you.
+                            </TableCell>
+                        </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </CardContent>
               <CardFooter>
-                  <Button type="submit" className="w-full sm:w-auto ml-auto">Submit Attendance</Button>
+                  <Button type="submit" className="w-full sm:w-auto ml-auto" disabled={isSubmittingAttendance || students.length === 0}>
+                    {isSubmittingAttendance && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Submit Attendance
+                  </Button>
               </CardFooter>
             </form>
           </Card>
@@ -363,7 +404,7 @@ export default function TeacherPage() {
           <Card>
             <CardHeader>
               <CardTitle>Student Progress</CardTitle>
-              <CardDescription>Overview of your students' performance.</CardDescription>
+              <CardDescription>Overview of your students' performance (Simulated).</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
@@ -377,16 +418,23 @@ export default function TeacherPage() {
                 <TableBody>
                   {isStudentsLoading && <TableRow><TableCell colSpan={3} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
                   {!isStudentsLoading && studentProgress.map((student) => (
-                    <TableRow key={student.name}>
+                    <TableRow key={student.id}>
                       <TableCell className="font-medium">{student.name}</TableCell>
                       <TableCell>
                         <Progress value={student.progress} className="w-[80%]" />
                       </TableCell>
                       <TableCell className="text-right">
-                        <Badge variant={student.status === "On Track" ? "default" : student.status === "Needs Help" ? "destructive" : "secondary"}>{student.status}</Badge>
+                        <Badge variant={student.status === "On Track" ? "default" : student.status === "Needs Attention" ? "secondary" : student.status === "At Risk" ? "destructive" : "outline"}>{student.status}</Badge>
                       </TableCell>
                     </TableRow>
                   ))}
+                   {!isStudentsLoading && students.length === 0 && (
+                        <TableRow>
+                            <TableCell colSpan={3} className="text-center text-muted-foreground">
+                                You have no students assigned to you.
+                            </TableCell>
+                        </TableRow>
+                    )}
                 </TableBody>
               </Table>
             </CardContent>
