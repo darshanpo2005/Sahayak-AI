@@ -29,21 +29,15 @@ export async function generateQuizQuestions(input: GenerateQuizQuestionsInput): 
 const prompt = ai.definePrompt({
   name: 'generateQuizQuestionsPrompt',
   input: {schema: GenerateQuizQuestionsInputSchema},
-  output: {schema: GenerateQuizQuestionsOutputSchema},
+  output: {
+    schema: GenerateQuizQuestionsOutputSchema,
+    format: 'json' // Enforce JSON output format
+  },
   prompt: `You are an expert quiz creator for an educational platform. Your role is to generate a specified number of quiz questions based on the provided topic.
-
-  The output MUST be a valid JSON object containing a key named "questions" which holds an array of strings.
 
   Please generate {{numQuestions}} quiz questions on the following topic: "{{topic}}".
 
-  Example of the required output format:
-  {
-    "questions": [
-      "What is the capital of France?",
-      "Who wrote 'To Kill a Mockingbird'?",
-      "What is 2 + 2?"
-    ]
-  }
+  The output MUST be a valid JSON object containing a key named "questions" which holds an array of strings.
   `,
 });
 
