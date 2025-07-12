@@ -31,7 +31,7 @@ const useSimulatedProgress = (courses: Course[]) => {
         newProgress[course.id] = pseudoRandom;
       }
     });
-    return newProgress;
+    return progress;
   }, [courses]);
 
   return progress;
