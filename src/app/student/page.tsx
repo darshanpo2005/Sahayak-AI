@@ -31,7 +31,7 @@ const useSimulatedProgress = (courses: Course[]) => {
         newProgress[course.id] = pseudoRandom;
       }
     });
-    return progress;
+    return newProgress;
   }, [courses]);
 
   return progress;
@@ -45,6 +45,11 @@ export default function StudentPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isGeneratingCert, setIsGeneratingCert] = useState<string | null>(null);
   const courseProgress = useSimulatedProgress(courses);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
 
   useEffect(() => {
@@ -159,7 +164,7 @@ export default function StudentPage() {
                                 </div>
                               </CardTitle>
                               <CardDescription>
-                                {format(new Date(course.liveClass.dateTime), "eeee, MMMM d, yyyy 'at' h:mm a")}
+                                {isClient ? format(new Date(course.liveClass.dateTime), "eeee, MMMM d, yyyy 'at' h:mm a") : 'Loading date...'}
                               </CardDescription>
                             </CardHeader>
                             <CardContent>
