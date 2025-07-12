@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Book, MessageSquare, Send, Bot, Loader2, CalendarCheck, Film, Award } from "lucide-react";
+import { Book, MessageSquare, Send, Bot, Loader2, CalendarCheck, Film, Award, CheckCircle } from "lucide-react";
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -17,11 +17,30 @@ import { getTutorResponse, getCertificate } from "@/lib/actions";
 import { getCourses, Course, Student } from "@/lib/services";
 import { useToast } from "@/hooks/use-toast";
 import { getSession } from "@/lib/authService";
+import { Progress } from "@/components/ui/progress";
 
 type ChatMessage = {
   author: "user" | "bot";
   message: string;
 };
+
+// Simulate progress for each course
+const useSimulatedProgress = (courses: Course[]) => {
+  const [progress, setProgress] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const newProgress: Record<string, number> = {};
+    courses.forEach(course => {
+      // Create a stable but pseudo-random progress value based on course ID
+      const pseudoRandom = (course.id!.charCodeAt(1) % 5) * 20 + 10;
+      newProgress[course.id!] = pseudoRandom;
+    });
+    setProgress(newProgress);
+  }, [courses]);
+
+  return progress;
+};
+
 
 export default function StudentPage() {
   const { toast } = useToast();
@@ -34,6 +53,7 @@ export default function StudentPage() {
   const [isLoadingCourses, setIsLoadingCourses] = useState(true);
   const [activeCourseTopic, setActiveCourseTopic] = useState("your course");
   const [isGeneratingCert, setIsGeneratingCert] = useState<string | null>(null);
+  const courseProgress = useSimulatedProgress(courses);
 
 
   useEffect(() => {
@@ -144,7 +164,7 @@ export default function StudentPage() {
           <Card>
             <CardHeader>
               <CardTitle>My Courses</CardTitle>
-              <CardDescription>Access your enrolled courses, modules, and video lectures here.</CardDescription>
+              <CardDescription>Access your enrolled courses, modules, and track your progress.</CardDescription>
             </CardHeader>
             <CardContent>
               {isLoadingCourses ? (
@@ -160,16 +180,27 @@ export default function StudentPage() {
                 }}>
                   {courses.map((course) => (
                     <AccordionItem value={course.id!} key={course.id}>
-                      <AccordionTrigger className="text-lg font-medium">{course.title}</AccordionTrigger>
+                      <AccordionTrigger className="text-lg font-medium hover:no-underline">
+                        <div className="w-full pr-8">
+                            <div className="flex justify-between items-center w-full">
+                                <span>{course.title}</span>
+                                <span className="text-sm font-normal text-muted-foreground">{courseProgress[course.id!]}% Complete</span>
+                            </div>
+                            <Progress value={courseProgress[course.id!]} className="mt-2 h-2" />
+                        </div>
+                      </AccordionTrigger>
                       <AccordionContent>
                         <div className="space-y-4">
                            <p className="text-muted-foreground mb-4">{course.description}</p>
                           {course.modules.map((module, moduleIndex) => (
                               <Card key={moduleIndex}>
                                  <CardHeader>
-                                      <CardTitle className="text-base flex items-center gap-2">
+                                      <CardTitle className="text-base flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
                                           <Film className="h-5 w-5 text-primary" />
                                           {module}
+                                        </div>
+                                        <CheckCircle className="h-5 w-5 text-green-500" />
                                       </CardTitle>
                                  </CardHeader>
                                  <CardContent>
@@ -179,7 +210,7 @@ export default function StudentPage() {
                                  </CardContent>
                               </Card>
                           ))}
-                          <div className="pt-4 flex justify-end">
+                           <div className="pt-4 flex justify-end">
                             <Button
                               onClick={() => handleGenerateCertificate(course.title)}
                               disabled={isGeneratingCert === course.title}
