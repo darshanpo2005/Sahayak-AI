@@ -66,7 +66,7 @@ export default function ManagementPage() {
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [toast]);
 
   const handleAddTeacher = async (e: React.FormEvent) => {
     e.preventDefault();
