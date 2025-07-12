@@ -18,7 +18,7 @@ const GenerateQuizQuestionsInputSchema = z.object({
 export type GenerateQuizQuestionsInput = z.infer<typeof GenerateQuizQuestionsInputSchema>;
 
 const GenerateQuizQuestionsOutputSchema = z.object({
-  questions: z.array(z.string()).describe('The generated quiz questions.'),
+  questions: z.array(z.string()).describe('An array of generated quiz questions.'),
 });
 export type GenerateQuizQuestionsOutput = z.infer<typeof GenerateQuizQuestionsOutputSchema>;
 
@@ -30,20 +30,21 @@ const prompt = ai.definePrompt({
   name: 'generateQuizQuestionsPrompt',
   input: {schema: GenerateQuizQuestionsInputSchema},
   output: {schema: GenerateQuizQuestionsOutputSchema},
-  system: `You are an expert quiz creator for an educational platform. Your role is to generate a specified number of quiz questions based on the provided topic. The output must be a JSON object containing a 'questions' array with the generated questions as strings.`,
-  prompt: `Please generate {{numQuestions}} quiz questions on the following topic:
+  prompt: `You are an expert quiz creator for an educational platform. Your role is to generate a specified number of quiz questions based on the provided topic.
 
-  {{topic}}
+  The output MUST be a valid JSON object containing a key named "questions" which holds an array of strings.
 
-  Here is an example of the expected output format:
+  Please generate {{numQuestions}} quiz questions on the following topic: "{{topic}}".
+
+  Example of the required output format:
   {
     "questions": [
       "What is the capital of France?",
-      "Who wrote 'To Kill a Mockingbird'?"
+      "Who wrote 'To Kill a Mockingbird'?",
+      "What is 2 + 2?"
     ]
   }
-
-  Each question should be a unique string within the 'questions' array.`,
+  `,
 });
 
 const generateQuizQuestionsFlow = ai.defineFlow(
