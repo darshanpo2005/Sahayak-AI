@@ -7,37 +7,48 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableRow, TableHead, TableHeader } from "@/components/ui/table";
 import { BookOpen, User, Loader2 } from "lucide-react";
-import { getCourses, Course, getTeachers, Teacher } from "@/lib/services";
+import { getCoursesForStudent, getStudentByName, Course, Student, getTeacherById, Teacher } from "@/lib/services";
 import { useToast } from "@/hooks/use-toast";
 
 export default function StudentProfilePage() {
   const { toast } = useToast();
+  const [student, setStudent] = useState<Student | null>(null);
   const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([]);
-  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [teachers, setTeachers] = useState<Record<string, Teacher>>({});
   const [isLoading, setIsLoading] = useState(true);
 
-  const student = {
-    name: "Alex Doe",
-    email: "alex.doe@example.com",
-    grade: "10th Grade",
-    avatarUrl: "https://placehold.co/128x128.png",
-  };
+  // For prototype purposes, we'll fetch a specific student.
+  // In a real app, you'd get the logged-in user's ID.
+  const studentNameToFetch = "Alex Doe"; 
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const [coursesData, teachersData] = await Promise.all([
-          getCourses(),
-          getTeachers()
-        ]);
-        setEnrolledCourses(coursesData);
-        setTeachers(teachersData);
+        const studentData = await getStudentByName(studentNameToFetch);
+        setStudent(studentData);
+
+        if (studentData) {
+          const coursesData = await getCoursesForStudent(studentData.id!);
+          setEnrolledCourses(coursesData);
+
+          // Fetch all teachers for the courses
+          const teacherIds = [...new Set(coursesData.map(c => c.teacherId))];
+          const teacherPromises = teacherIds.map(id => getTeacherById(id));
+          const teachersData = await Promise.all(teacherPromises);
+          
+          const teachersMap: Record<string, Teacher> = {};
+          teachersData.forEach(t => {
+            if (t) teachersMap[t.id!] = t;
+          });
+          setTeachers(teachersMap);
+        }
       } catch (error) {
+        console.error(error);
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Failed to load profile data.",
+          description: `Failed to load profile data. Have you added a student named "${studentNameToFetch}"?`,
         });
       } finally {
         setIsLoading(false);
@@ -47,62 +58,79 @@ export default function StudentProfilePage() {
   }, [toast]);
   
   const getTeacherName = (teacherId: string) => {
-    return teachers.find(t => t.id === teacherId)?.name || 'N/A';
+    return teachers[teacherId]?.name || 'N/A';
   }
 
   return (
     <DashboardPage title="My Profile" role="Student">
-      <div className="grid gap-8 md:grid-cols-3">
-        <div className="md:col-span-1">
-          <Card>
-            <CardHeader className="items-center">
-              <Avatar className="w-24 h-24 mb-4">
-                 <AvatarImage src={student.avatarUrl} alt={student.name} data-ai-hint="profile picture" />
-                <AvatarFallback>
-                  <User className="w-12 h-12" />
-                </AvatarFallback>
-              </Avatar>
-              <CardTitle className="text-2xl">{student.name}</CardTitle>
-              <Badge>{student.grade}</Badge>
-            </CardHeader>
-            <CardContent className="text-center">
-              <p className="text-muted-foreground">{student.email}</p>
-            </CardContent>
-          </Card>
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin" />
         </div>
-        <div className="md:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BookOpen className="w-6 h-6" />
-                Enrolled Courses
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Course</TableHead>
-                    <TableHead>Teacher</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isLoading ? (
-                     <TableRow><TableCell colSpan={2} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>
-                  ) : (
-                    enrolledCourses.map((course) => (
-                      <TableRow key={course.id}>
-                        <TableCell className="font-medium">{course.title}</TableCell>
-                        <TableCell>{getTeacherName(course.teacherId)}</TableCell>
+      ) : student ? (
+        <div className="grid gap-8 md:grid-cols-3">
+          <div className="md:col-span-1">
+            <Card>
+              <CardHeader className="items-center">
+                <Avatar className="w-24 h-24 mb-4">
+                   <AvatarImage src={`https://placehold.co/128x128.png?text=${student.name.charAt(0)}`} alt={student.name} data-ai-hint="profile picture" />
+                  <AvatarFallback>
+                    <User className="w-12 h-12" />
+                  </AvatarFallback>
+                </Avatar>
+                <CardTitle className="text-2xl">{student.name}</CardTitle>
+                <Badge>{student.grade}</Badge>
+              </CardHeader>
+              <CardContent className="text-center">
+                 <p className="text-muted-foreground">{student.id}</p>
+              </CardContent>
+            </Card>
+          </div>
+          <div className="md:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="w-6 h-6" />
+                  Enrolled Courses
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                 <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Course</TableHead>
+                      <TableHead>Teacher</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {enrolledCourses.length > 0 ? (
+                      enrolledCourses.map((course) => (
+                        <TableRow key={course.id}>
+                          <TableCell className="font-medium">{course.title}</TableCell>
+                          <TableCell>{getTeacherName(course.teacherId)}</TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                       <TableRow>
+                        <TableCell colSpan={2} className="text-center text-muted-foreground">
+                          Not enrolled in any courses.
+                        </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
+      ) : (
+        <Card className="text-center p-8">
+            <CardTitle>Student Not Found</CardTitle>
+            <CardDescription>
+                Could not find a student named "{studentNameToFetch}". Please add them via the Management dashboard.
+            </CardDescription>
+        </Card>
+      )}
     </DashboardPage>
   );
 }

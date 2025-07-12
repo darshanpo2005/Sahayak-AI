@@ -1,5 +1,5 @@
 import { db } from './firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where, getDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where, getDoc, limit } from 'firebase/firestore';
 
 export interface Teacher {
   id?: string;
@@ -38,6 +38,25 @@ export const getTeachers = async (): Promise<Teacher[]> => {
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Teacher));
 };
 
+export const getTeacherByName = async (name: string): Promise<Teacher | null> => {
+    const q = query(collection(db, "teachers"), where("name", "==", name), limit(1));
+    const querySnapshot = await getDocs(q);
+    if (querySnapshot.empty) {
+        return null;
+    }
+    const doc = querySnapshot.docs[0];
+    return { id: doc.id, ...doc.data() } as Teacher;
+};
+
+export const getTeacherById = async (id: string): Promise<Teacher | null> => {
+    const docRef = doc(db, "teachers", id);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() } as Teacher;
+    }
+    return null;
+}
+
 export const deleteTeacher = async (id: string) => {
   try {
     await deleteDoc(doc(db, 'teachers', id));
@@ -61,6 +80,22 @@ export const addStudent = async (student: Omit<Student, 'id'>) => {
 
 export const getStudents = async (): Promise<Student[]> => {
     const querySnapshot = await getDocs(collection(db, "students"));
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student));
+}
+
+export const getStudentByName = async (name: string): Promise<Student | null> => {
+    const q = query(collection(db, "students"), where("name", "==", name), limit(1));
+    const querySnapshot = await getDocs(q);
+    if (querySnapshot.empty) {
+        return null;
+    }
+    const doc = querySnapshot.docs[0];
+    return { id: doc.id, ...doc.data() } as Student;
+}
+
+export const getStudentsForTeacher = async (teacherId: string): Promise<Student[]> => {
+    const q = query(collection(db, "students"), where("teacherId", "==", teacherId));
+    const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student));
 }
 
@@ -88,4 +123,15 @@ export const addCourse = async (course: Omit<Course, 'id'>) => {
 export const getCourses = async (): Promise<Course[]> => {
     const querySnapshot = await getDocs(collection(db, "courses"));
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course));
+}
+
+export const getCoursesForTeacher = async (teacherId: string): Promise<Course[]> => {
+    const q = query(collection(db, "courses"), where("teacherId", "==", teacherId));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course));
+}
+
+// In a real app, students would be enrolled in courses. For simplicity, we'll return all courses.
+export const getCoursesForStudent = async (studentId: string): Promise<Course[]> => {
+    return getCourses();
 }
