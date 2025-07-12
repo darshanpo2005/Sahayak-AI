@@ -81,6 +81,14 @@ export const getTeacherById = async (id: string): Promise<Teacher | null> => {
     return mockTeachers.find(t => t.id === id) || null;
 }
 
+export const updateTeacher = async (id: string, updates: Partial<Teacher>): Promise<Teacher | null> => {
+  await delay(300);
+  const teacherIndex = mockTeachers.findIndex(t => t.id === id);
+  if (teacherIndex === -1) return null;
+  mockTeachers[teacherIndex] = { ...mockTeachers[teacherIndex], ...updates };
+  return mockTeachers[teacherIndex];
+}
+
 export const deleteTeacher = async (id: string): Promise<void> => {
   await delay(300);
   mockTeachers = mockTeachers.filter(t => t.id !== id);
@@ -120,6 +128,14 @@ export const getStudentByEmail = async (email: string): Promise<Student | null> 
 export const getStudentsForTeacher = async (teacherId: string): Promise<Student[]> => {
     await delay(200);
     return mockStudents.filter(s => s.teacherId === teacherId);
+}
+
+export const updateStudent = async (id: string, updates: Partial<Student>): Promise<Student | null> => {
+  await delay(300);
+  const studentIndex = mockStudents.findIndex(s => s.id === id);
+  if (studentIndex === -1) return null;
+  mockStudents[studentIndex] = { ...mockStudents[studentIndex], ...updates };
+  return mockStudents[studentIndex];
 }
 
 export const deleteStudent = async (id: string): Promise<void> => {

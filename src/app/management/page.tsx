@@ -8,10 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Users, Building, BookOpen, Activity, PlusCircle, Loader2, Trash2 } from "lucide-react";
+import { Users, Building, BookOpen, Activity, PlusCircle, Loader2, Trash2, Edit } from "lucide-react";
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
-import { addTeacher, getTeachers, getStudents, getCourses, addCourse, Teacher, Student, Course, addStudent, deleteTeacher, deleteStudent, deleteCourse } from "@/lib/services";
+import { addTeacher, getTeachers, getStudents, getCourses, addCourse, Teacher, Student, Course, addStudent, deleteTeacher, deleteStudent, deleteCourse, updateTeacher, updateStudent } from "@/lib/services";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog,
@@ -23,8 +23,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+
 
 type DeletionTarget = { type: 'teacher' | 'student' | 'course', id: string, name: string } | null;
+type EditingTarget = { type: 'teacher', data: Teacher } | { type: 'student', data: Student } | null;
 
 export default function ManagementPage() {
   const { toast } = useToast();
@@ -36,6 +47,8 @@ export default function ManagementPage() {
   const [isAddingStudent, setIsAddingStudent] = useState(false);
   const [isCreatingCourse, setIsCreatingCourse] = useState(false);
   const [deletionTarget, setDeletionTarget] = useState<DeletionTarget>(null);
+  const [editingTarget, setEditingTarget] = useState<EditingTarget>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const fetchDashboardData = async () => {
     setIsLoading(true);
@@ -177,6 +190,51 @@ export default function ManagementPage() {
     }
   };
 
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTarget) return;
+
+    setIsUpdating(true);
+    const form = e.target as HTMLFormElement;
+
+    try {
+        if (editingTarget.type === 'teacher') {
+            const updatedData: Teacher = {
+                ...editingTarget.data,
+                name: (form.elements.namedItem("editTeacherName") as HTMLInputElement).value,
+                email: (form.elements.namedItem("editTeacherEmail") as HTMLInputElement).value,
+                password: (form.elements.namedItem("editTeacherPassword") as HTMLInputElement).value,
+            };
+            await updateTeacher(updatedData.id, updatedData);
+        } else if (editingTarget.type === 'student') {
+            const updatedData: Student = {
+                 ...editingTarget.data,
+                name: (form.elements.namedItem("editStudentName") as HTMLInputElement).value,
+                email: (form.elements.namedItem("editStudentEmail") as HTMLInputElement).value,
+                password: (form.elements.namedItem("editStudentPassword") as HTMLInputElement).value,
+                grade: (form.elements.namedItem("editStudentGrade") as HTMLInputElement).value,
+                teacherId: (form.elements.namedItem("editStudentTeacher") as HTMLSelectElement).value,
+            };
+            await updateStudent(updatedData.id, updatedData);
+        }
+        
+        toast({
+            title: "Update Successful",
+            description: "User information has been updated.",
+        });
+        fetchDashboardData();
+    } catch (error) {
+         toast({
+            variant: "destructive",
+            title: "Error",
+            description: `Could not update the user.`,
+        });
+    } finally {
+        setIsUpdating(false);
+        setEditingTarget(null);
+    }
+  }
+
   return (
     <DashboardPage title="Management Dashboard" role="Management">
       <Tabs defaultValue="status">
@@ -304,16 +362,21 @@ export default function ManagementPage() {
                       <TableRow>
                         <TableHead>Name</TableHead>
                         <TableHead>Email</TableHead>
-                        <TableHead className="text-right">Action</TableHead>
+                        <TableHead>Password</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {isLoading && <TableRow><TableCell colSpan={3} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
+                      {isLoading && <TableRow><TableCell colSpan={4} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
                       {!isLoading && teachers.map((t) => (
                         <TableRow key={t.id}>
                           <TableCell className="font-medium">{t.name}</TableCell>
                           <TableCell>{t.email}</TableCell>
-                          <TableCell className="text-right">
+                          <TableCell>{t.password}</TableCell>
+                          <TableCell className="text-right space-x-2">
+                             <Button variant="outline" size="sm" onClick={() => setEditingTarget({ type: 'teacher', data: t })}>
+                                <Edit className="h-4 w-4" />
+                            </Button>
                             <Button variant="destructive" size="sm" onClick={() => setDeletionTarget({ type: 'teacher', id: t.id!, name: t.name })}>
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -334,20 +397,25 @@ export default function ManagementPage() {
                       <TableRow>
                         <TableHead>Name</TableHead>
                         <TableHead>Email</TableHead>
+                        <TableHead>Password</TableHead>
                         <TableHead>Grade</TableHead>
                         <TableHead>Assigned Teacher</TableHead>
-                        <TableHead className="text-right">Action</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                       {isLoading && <TableRow><TableCell colSpan={5} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
+                       {isLoading && <TableRow><TableCell colSpan={6} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
                       {!isLoading && students.map((s) => (
                         <TableRow key={s.id}>
                           <TableCell className="font-medium">{s.name}</TableCell>
                           <TableCell>{s.email}</TableCell>
+                          <TableCell>{s.password}</TableCell>
                           <TableCell>{s.grade}</TableCell>
                           <TableCell>{teachers.find(t => t.id === s.teacherId)?.name || 'N/A'}</TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-right space-x-2">
+                              <Button variant="outline" size="sm" onClick={() => setEditingTarget({ type: 'student', data: s })}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
                              <Button variant="destructive" size="sm" onClick={() => setDeletionTarget({ type: 'student', id: s.id!, name: s.name })}>
                                 <Trash2 className="h-4 w-4" />
                              </Button>
@@ -435,6 +503,8 @@ export default function ManagementPage() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Deletion Dialog */}
       <AlertDialog open={!!deletionTarget} onOpenChange={() => setDeletionTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -451,6 +521,79 @@ export default function ManagementPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+       {/* Edit Dialog */}
+       <Dialog open={!!editingTarget} onOpenChange={() => setEditingTarget(null)}>
+        <DialogContent>
+          <form onSubmit={handleUpdateUser}>
+            <DialogHeader>
+              <DialogTitle>Edit {editingTarget?.type}</DialogTitle>
+              <DialogDescription>
+                 Update the details for {editingTarget?.data.name}.
+              </DialogDescription>
+            </DialogHeader>
+
+            {editingTarget?.type === 'teacher' && (
+              <div className="grid gap-4 py-4">
+                 <div className="grid gap-1.5">
+                    <Label htmlFor="editTeacherName">Full Name</Label>
+                    <Input id="editTeacherName" name="editTeacherName" defaultValue={editingTarget.data.name} required />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="editTeacherEmail">Email Address</Label>
+                    <Input id="editTeacherEmail" name="editTeacherEmail" type="email" defaultValue={editingTarget.data.email} required />
+                  </div>
+                   <div className="grid gap-1.5">
+                    <Label htmlFor="editTeacherPassword">Password</Label>
+                    <Input id="editTeacherPassword" name="editTeacherPassword" type="text" defaultValue={editingTarget.data.password} required />
+                  </div>
+              </div>
+            )}
+
+            {editingTarget?.type === 'student' && (
+                <div className="grid gap-4 py-4">
+                     <div className="grid gap-1.5">
+                        <Label htmlFor="editStudentName">Full Name</Label>
+                        <Input id="editStudentName" name="editStudentName" defaultValue={editingTarget.data.name} required />
+                    </div>
+                    <div className="grid gap-1.5">
+                        <Label htmlFor="editStudentEmail">Email Address</Label>
+                        <Input id="editStudentEmail" name="editStudentEmail" type="email" defaultValue={editingTarget.data.email} required />
+                    </div>
+                    <div className="grid gap-1.5">
+                        <Label htmlFor="editStudentPassword">Password</Label>
+                        <Input id="editStudentPassword" name="editStudentPassword" type="text" defaultValue={editingTarget.data.password} required />
+                    </div>
+                    <div className="grid gap-1.5">
+                        <Label htmlFor="editStudentGrade">Grade</Label>
+                        <Input id="editStudentGrade" name="editStudentGrade" defaultValue={editingTarget.data.grade} required />
+                    </div>
+                    <div className="grid gap-1.5">
+                        <Label htmlFor="editStudentTeacher">Assign Teacher</Label>
+                        <Select name="editStudentTeacher" required defaultValue={editingTarget.data.teacherId}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a teacher" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {teachers.map(t => <SelectItem key={t.id} value={t.id!}>{t.name}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+            )}
+
+            <DialogFooter>
+                <DialogClose asChild>
+                    <Button type="button" variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button type="submit" disabled={isUpdating}>
+                    {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save Changes
+                </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </DashboardPage>
   );
 }
