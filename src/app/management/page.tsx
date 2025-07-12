@@ -179,6 +179,7 @@ export default function ManagementPage() {
     }
   };
 
+  // Correctly handle the case where Firebase is not configured using an early return.
   if (!isFirebaseConfigured) {
     return (
       <DashboardPage title="Configuration Needed" role="Management">
@@ -440,7 +441,7 @@ export default function ManagementPage() {
                     </TableBody>
                   </Table>
               </CardContent>
-            </card>
+            </Card>
           </div>
         </TabsContent>
       </Tabs>
@@ -463,5 +464,3 @@ export default function ManagementPage() {
     </DashboardPage>
   );
 }
-
-    
