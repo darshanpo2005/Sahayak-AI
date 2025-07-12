@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { DashboardPage } from "@/components/layout/dashboard-page";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -27,7 +26,6 @@ export default function TeacherSettingsPage() {
   };
 
   return (
-    <DashboardPage title="Settings" role="Teacher">
       <form onSubmit={handleSaveChanges}>
         <div className="grid gap-8">
           <Card>
@@ -101,6 +99,5 @@ export default function TeacherSettingsPage() {
           </div>
         </div>
       </form>
-    </DashboardPage>
   );
 }

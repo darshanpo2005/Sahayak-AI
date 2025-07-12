@@ -35,9 +35,15 @@ export function DashboardPage({ children, title, role }: DashboardPageProps) {
   useEffect(() => {
     // getSession is synchronous and reads from localStorage
     const currentSession = getSession();
-    setSession(currentSession as Session);
-    setIsLoading(false);
-  }, []);
+    
+    if (role !== "Management" && (!currentSession || currentSession.role !== role.toLowerCase())) {
+        logout();
+        router.push(role === "Student" ? "/student/login" : "/teacher/login");
+    } else {
+        setSession(currentSession as Session);
+        setIsLoading(false);
+    }
+  }, [role, router]);
 
   const handleLogout = () => {
     logout();
@@ -54,6 +60,14 @@ export function DashboardPage({ children, title, role }: DashboardPageProps) {
     if (role === "Student") return "/settings/student";
     if (role === "Teacher") return "/settings/teacher";
     return "/";
+  }
+  
+  if (isLoading) {
+    return (
+       <div className="flex justify-center items-center min-h-screen">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+    )
   }
 
   return (
@@ -78,7 +92,7 @@ export function DashboardPage({ children, title, role }: DashboardPageProps) {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src="https://placehold.co/100x100.png" alt="User" data-ai-hint="user avatar" />
+                    <AvatarImage src={`https://placehold.co/100x100.png?text=${session?.user?.name?.charAt(0)}`} alt="User" data-ai-hint="user avatar" />
                     {isLoading ? <AvatarFallback><Loader2 className="w-4 h-4 animate-spin" /></AvatarFallback> 
                                : <AvatarFallback>{session?.user?.name?.charAt(0) || role.charAt(0)}</AvatarFallback>}
                   </Avatar>

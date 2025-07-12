@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { DashboardPage } from "@/components/layout/dashboard-page";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -63,16 +62,13 @@ export default function TeacherProfilePage() {
 
   if (!teacher) {
     return (
-       <DashboardPage title="My Profile" role="Teacher">
-         <div className="flex justify-center items-center h-64">
+       <div className="flex justify-center items-center h-64">
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
-       </DashboardPage>
     )
   }
 
   return (
-    <DashboardPage title="My Profile" role="Teacher">
       <div className="grid gap-8 md:grid-cols-3">
         <div className="md:col-span-1">
           <Card>
@@ -174,6 +170,5 @@ export default function TeacherProfilePage() {
           </Card>
         </div>
       </div>
-    </DashboardPage>
   );
 }
