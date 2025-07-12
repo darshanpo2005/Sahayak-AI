@@ -1,170 +1,147 @@
-import { db, isFirebaseConfigured } from './firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where, getDoc, limit } from 'firebase/firestore';
+// Mock data services. No database connection needed.
 
 export interface Teacher {
-  id?: string;
+  id: string;
   name: string;
   email: string;
 }
 
 export interface Student {
-  id?: string;
+  id: string;
   name: string;
   grade: string;
   teacherId: string;
 }
 
 export interface Course {
-  id?: string;
+  id: string;
   title: string;
   description: string;
   modules: string[];
   teacherId: string;
 }
 
-const guardAgainstUnconfigured = () => {
-    if (!isFirebaseConfigured) {
-        throw new Error("Firebase is not configured. Please check your .env file.");
-    }
-}
+// Mock Database
+let mockTeachers: Teacher[] = [
+  { id: 't1', name: 'Jane Doe', email: 'jane.doe@school.com' },
+  { id: 't2', name: 'John Smith', email: 'john.smith@school.com' },
+];
+
+let mockStudents: Student[] = [
+  { id: 's1', name: 'Alex Doe', grade: '10th Grade', teacherId: 't1' },
+  { id: 's2', name: 'Sam Wilson', grade: '10th Grade', teacherId: 't1' },
+  { id: 's3', name: 'Maria Hill', grade: '11th Grade', teacherId: 't2' },
+];
+
+let mockCourses: Course[] = [
+  { 
+    id: 'c1', 
+    title: 'Introduction to Algebra', 
+    description: 'Learn the fundamentals of algebraic expressions and equations.', 
+    modules: ['Variables and Expressions', 'Solving Equations', 'Functions and Graphs'], 
+    teacherId: 't1' 
+  },
+  { 
+    id: 'c2', 
+    title: 'World History: Ancient Civilizations', 
+    description: 'Explore the history of early human societies from Mesopotamia to Rome.', 
+    modules: ['The Fertile Crescent', 'Ancient Egypt', 'Greece and Rome'], 
+    teacherId: 't2' 
+  },
+];
+
+const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+
+// Helper to generate unique IDs
+const generateId = (prefix: string) => `${prefix}${Date.now()}${Math.random().toString(36).substring(2, 5)}`;
 
 // Teacher Services
-export const addTeacher = async (teacher: Omit<Teacher, 'id'>) => {
-  guardAgainstUnconfigured();
-  try {
-    const docRef = await addDoc(collection(db!, 'teachers'), teacher);
-    return { id: docRef.id, ...teacher };
-  } catch (e) {
-    console.error("Error adding document: ", e);
-    throw new Error("Could not add teacher");
-  }
+export const addTeacher = async (teacher: Omit<Teacher, 'id'>): Promise<Teacher> => {
+  await delay(300);
+  const newTeacher: Teacher = { ...teacher, id: generateId('t') };
+  mockTeachers.push(newTeacher);
+  return newTeacher;
 };
 
 export const getTeachers = async (): Promise<Teacher[]> => {
-  guardAgainstUnconfigured();
-  const querySnapshot = await getDocs(collection(db!, "teachers"));
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Teacher));
+  await delay(300);
+  return [...mockTeachers];
 };
 
 export const getTeacherByName = async (name: string): Promise<Teacher | null> => {
-    guardAgainstUnconfigured();
-    const q = query(collection(db!, "teachers"), where("name", "==", name), limit(1));
-    const querySnapshot = await getDocs(q);
-    if (querySnapshot.empty) {
-        return null;
-    }
-    const doc = querySnapshot.docs[0];
-    return { id: doc.id, ...doc.data() } as Teacher;
-};
+    await delay(100);
+    return mockTeachers.find(t => t.name === name) || null;
+}
 
 export const getTeacherById = async (id: string): Promise<Teacher | null> => {
-    guardAgainstUnconfigured();
-    const docRef = doc(db!, "teachers", id);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() } as Teacher;
-    }
-    return null;
+    await delay(100);
+    return mockTeachers.find(t => t.id === id) || null;
 }
 
-export const deleteTeacher = async (id: string) => {
-  guardAgainstUnconfigured();
-  try {
-    await deleteDoc(doc(db!, 'teachers', id));
-  } catch (e) {
-    console.error("Error deleting document: ", e);
-    throw new Error("Could not delete teacher");
-  }
+export const deleteTeacher = async (id: string): Promise<void> => {
+  await delay(300);
+  mockTeachers = mockTeachers.filter(t => t.id !== id);
+  // Also unassign students and courses from this teacher
+  mockStudents = mockStudents.map(s => s.teacherId === id ? { ...s, teacherId: '' } : s);
+  mockCourses = mockCourses.map(c => c.teacherId === id ? { ...c, teacherId: '' } : c);
 };
 
-
 // Student Services
-export const addStudent = async (student: Omit<Student, 'id'>) => {
-    guardAgainstUnconfigured();
-    try {
-        const docRef = await addDoc(collection(db!, 'students'), student);
-        return { id: docRef.id, ...student };
-    } catch (e) {
-        console.error("Error adding document: ", e);
-        throw new Error("Could not add student");
-    }
-}
+export const addStudent = async (student: Omit<Student, 'id'>): Promise<Student> => {
+  await delay(300);
+  const newStudent: Student = { ...student, id: generateId('s') };
+  mockStudents.push(newStudent);
+  return newStudent;
+};
 
 export const getStudents = async (): Promise<Student[]> => {
-    guardAgainstUnconfigured();
-    const querySnapshot = await getDocs(collection(db!, "students"));
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student));
-}
+  await delay(300);
+  return [...mockStudents];
+};
 
 export const getStudentByName = async (name: string): Promise<Student | null> => {
-    guardAgainstUnconfigured();
-    const q = query(collection(db!, "students"), where("name", "==", name), limit(1));
-    const querySnapshot = await getDocs(q);
-    if (querySnapshot.empty) {
-        return null;
-    }
-    const doc = querySnapshot.docs[0];
-    return { id: doc.id, ...doc.data() } as Student;
+    await delay(100);
+    return mockStudents.find(s => s.name === name) || null;
 }
 
 export const getStudentsForTeacher = async (teacherId: string): Promise<Student[]> => {
-    guardAgainstUnconfigured();
-    const q = query(collection(db!, "students"), where("teacherId", "==", teacherId));
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student));
+    await delay(200);
+    return mockStudents.filter(s => s.teacherId === teacherId);
 }
 
-export const deleteStudent = async (id: string) => {
-  guardAgainstUnconfigured();
-  try {
-    await deleteDoc(doc(db!, 'students', id));
-  } catch (e) {
-    console.error("Error deleting document: ", e);
-    throw new Error("Could not delete student");
-  }
+export const deleteStudent = async (id: string): Promise<void> => {
+  await delay(300);
+  mockStudents = mockStudents.filter(s => s.id !== id);
 };
 
-
 // Course Services
-export const addCourse = async (course: Omit<Course, 'id'>) => {
-    guardAgainstUnconfigured();
-    try {
-        const docRef = await addDoc(collection(db!, 'courses'), course);
-        return { id: docRef.id, ...course };
-    } catch (e) {
-        console.error("Error adding document: ", e);
-        throw new Error("Could not add course");
-    }
-}
+export const addCourse = async (course: Omit<Course, 'id'>): Promise<Course> => {
+  await delay(300);
+  const newCourse: Course = { ...course, id: generateId('c') };
+  mockCourses.push(newCourse);
+  return newCourse;
+};
 
 export const getCourses = async (): Promise<Course[]> => {
-    guardAgainstUnconfigured();
-    const querySnapshot = await getDocs(collection(db!, "courses"));
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course));
-}
+  await delay(300);
+  return [...mockCourses];
+};
 
 export const getCoursesForTeacher = async (teacherId: string): Promise<Course[]> => {
-    guardAgainstUnconfigured();
-    const q = query(collection(db!, "courses"), where("teacherId", "==", teacherId));
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course));
+    await delay(200);
+    return mockCourses.filter(c => c.teacherId === teacherId);
 }
 
-// In a real app, students would be enrolled in courses. For simplicity, we'll return all courses.
+// For simplicity, we'll return all courses for any student.
 export const getCoursesForStudent = async (studentId: string): Promise<Course[]> => {
-    guardAgainstUnconfigured();
+    await delay(200);
     return getCourses();
 }
 
-export const deleteCourse = async (id: string) => {
-  guardAgainstUnconfigured();
-  try {
-    await deleteDoc(doc(db!, 'courses', id));
-  } catch (e) {
-    console.error("Error deleting document: ", e);
-    throw new Error("Could not delete course");
-  }
+export const deleteCourse = async (id: string): Promise<void> => {
+  await delay(300);
+  mockCourses = mockCourses.filter(c => c.id !== id);
 };
 
-// Also export the configuration status
-export { isFirebaseConfigured };
+// This is no longer needed but kept for compatibility with components that might import it.
+export const isFirebaseConfigured = true;

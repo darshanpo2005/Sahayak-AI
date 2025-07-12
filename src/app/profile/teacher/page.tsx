@@ -41,7 +41,7 @@ export default function TeacherProfilePage() {
          toast({
           variant: "destructive",
           title: "Error",
-          description: `Failed to load profile data. Have you added a teacher named "${teacherNameToFetch}"?`,
+          description: `Failed to load profile data. Using mock data.`,
         });
       } finally {
         setIsLoading(false);
@@ -156,7 +156,7 @@ export default function TeacherProfilePage() {
          <Card className="text-center p-8">
             <CardTitle>Teacher Not Found</CardTitle>
             <CardDescription>
-                Could not find a teacher named "{teacherNameToFetch}". Please add them via the Management dashboard.
+                Could not find a teacher named "{teacherNameToFetch}". You can add them via the Management dashboard.
             </CardDescription>
         </Card>
       )}

@@ -48,7 +48,7 @@ export default function StudentProfilePage() {
         toast({
           variant: "destructive",
           title: "Error",
-          description: `Failed to load profile data. Have you added a student named "${studentNameToFetch}"?`,
+          description: `Failed to load profile data. Using mock data.`,
         });
       } finally {
         setIsLoading(false);
@@ -127,7 +127,7 @@ export default function StudentProfilePage() {
         <Card className="text-center p-8">
             <CardTitle>Student Not Found</CardTitle>
             <CardDescription>
-                Could not find a student named "{studentNameToFetch}". Please add them via the Management dashboard.
+                Could not find a student named "{studentNameToFetch}". You can add them via the Management dashboard.
             </CardDescription>
         </Card>
       )}

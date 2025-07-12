@@ -29,6 +29,7 @@ export default function StudentPage() {
   const [isAnswering, setIsAnswering] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoadingCourses, setIsLoadingCourses] = useState(true);
+  const [activeCourseTopic, setActiveCourseTopic] = useState("your course");
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -52,7 +53,6 @@ export default function StudentPage() {
     fetchCourses();
   }, [toast]);
   
-  const [activeCourseTopic, setActiveCourseTopic] = useState(courses.length > 0 ? courses[0].title : "your course");
 
   const attendance = [
     { date: "2024-07-22", status: "Present" },
