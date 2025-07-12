@@ -7,13 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Book, MessageSquare, Send, Bot, Loader2, CalendarCheck, Film } from "lucide-react";
+import { Book, MessageSquare, Send, Bot, Loader2, CalendarCheck, Film, Award } from "lucide-react";
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
-import { getTutorResponse } from "@/lib/actions";
+import { getTutorResponse, getCertificate } from "@/lib/actions";
 import { getCourses, Course, Student } from "@/lib/services";
 import { useToast } from "@/hooks/use-toast";
 import { getSession } from "@/lib/authService";
@@ -33,6 +33,8 @@ export default function StudentPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoadingCourses, setIsLoadingCourses] = useState(true);
   const [activeCourseTopic, setActiveCourseTopic] = useState("your course");
+  const [isGeneratingCert, setIsGeneratingCert] = useState<string | null>(null);
+
 
   useEffect(() => {
     const currentSession = getSession();
@@ -97,6 +99,29 @@ export default function StudentPage() {
     }
     setIsAnswering(false);
   };
+
+  const handleGenerateCertificate = async (courseName: string) => {
+    if (!session) return;
+    setIsGeneratingCert(courseName);
+    const result = await getCertificate({
+      studentName: session.user.name,
+      courseName: courseName,
+      date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+    });
+    
+    if (result.success) {
+      const newWindow = window.open();
+      newWindow?.document.write(result.data.certificateHtml);
+      newWindow?.document.close();
+    } else {
+       toast({
+        variant: "destructive",
+        title: "Certificate Generation Failed",
+        description: result.error,
+      });
+    }
+    setIsGeneratingCert(null);
+  }
   
   if (!session) {
     return (
@@ -154,6 +179,19 @@ export default function StudentPage() {
                                  </CardContent>
                               </Card>
                           ))}
+                          <div className="pt-4 flex justify-end">
+                            <Button
+                              onClick={() => handleGenerateCertificate(course.title)}
+                              disabled={isGeneratingCert === course.title}
+                            >
+                              {isGeneratingCert === course.title ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              ) : (
+                                <Award className="mr-2 h-4 w-4" />
+                              )}
+                              Generate Certificate
+                            </Button>
+                          </div>
                         </div>
                       </AccordionContent>
                     </AccordionItem>

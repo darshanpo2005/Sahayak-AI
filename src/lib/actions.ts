@@ -3,6 +3,7 @@
 import { generateLessonPlanAssistance, GenerateLessonPlanAssistanceInput, GenerateLessonPlanAssistanceOutput } from "@/ai/flows/generate-lesson-plan-assistance";
 import { generateQuizQuestions, GenerateQuizQuestionsInput, GenerateQuizQuestionsOutput } from "@/ai/flows/generate-quiz-questions";
 import { tutorStudent, TutorStudentInput, TutorStudentOutput } from "@/ai/flows/tutor-student";
+import { generateCertificate, GenerateCertificateInput, GenerateCertificateOutput } from "@/ai/flows/generate-certificate";
 
 type LessonPlanResult = {
   success: true;
@@ -26,7 +27,15 @@ type TutorResult = {
 } | {
   success: false;
   error: string;
-}
+};
+
+type CertificateResult = {
+  success: true;
+  data: GenerateCertificateOutput;
+} | {
+  success: false;
+  error: string;
+};
 
 export async function getLessonPlan(input: GenerateLessonPlanAssistanceInput): Promise<LessonPlanResult> {
   if (!input.subject || !input.gradeLevel) {
@@ -70,6 +79,20 @@ export async function getTutorResponse(input: TutorStudentInput): Promise<TutorR
   }
 }
 
+export async function getCertificate(input: GenerateCertificateInput): Promise<CertificateResult> {
+  if (!input.studentName || !input.courseName || !input.date) {
+    return { success: false, error: "Student name, course name, and date are required." };
+  }
+  
+  try {
+    const result = await generateCertificate(input);
+    return { success: true, data: result };
+  } catch (error) {
+    console.error("Error generating certificate:", error);
+    return { success: false, error: "An unexpected error occurred while generating the certificate." };
+  }
+}
+
 
 // Export types for use in client components
-export type { GenerateLessonPlanAssistanceOutput, GenerateQuizQuestionsOutput, TutorStudentOutput };
+export type { GenerateLessonPlanAssistanceOutput, GenerateQuizQuestionsOutput, TutorStudentOutput, GenerateCertificateOutput };
