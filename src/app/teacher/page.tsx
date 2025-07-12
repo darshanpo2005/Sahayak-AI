@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,11 +18,15 @@ import { Lightbulb, HelpCircle, BarChart3, Bot, Sparkles, Loader2, CalendarCheck
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { getStudents, Student } from "@/lib/services";
+import { getStudents, Student, Teacher } from "@/lib/services";
+import { getSession } from "@/lib/authService";
 import { cn } from "@/lib/utils";
 
 export default function TeacherPage() {
   const { toast } = useToast();
+  const router = useRouter();
+  const [session, setSession] = useState<{ user: Teacher; role: 'teacher' } | null>(null);
+
   const [lessonPlan, setLessonPlan] = useState<GenerateLessonPlanAssistanceOutput | null>(null);
   const [isLessonPlanLoading, setIsLessonPlanLoading] = useState(false);
   const [lessonPlanError, setLessonPlanError] = useState<string | null>(null);
@@ -32,6 +37,15 @@ export default function TeacherPage() {
   
   const [students, setStudents] = useState<Student[]>([]);
   const [isStudentsLoading, setIsStudentsLoading] = useState(true);
+
+  useEffect(() => {
+    const currentSession = getSession();
+    if (!currentSession || currentSession.role !== 'teacher') {
+      router.push('/teacher/login');
+    } else {
+      setSession(currentSession as { user: Teacher; role: 'teacher' });
+    }
+  }, [router]);
 
   useEffect(() => {
     const fetchStudents = async () => {
@@ -110,6 +124,14 @@ export default function TeacherPage() {
         return "Needs Help";
       }
   }));
+
+  if (!session) {
+    return (
+       <div className="flex justify-center items-center min-h-screen">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+    )
+  }
 
   return (
     <DashboardPage title="Teacher Dashboard" role="Teacher">

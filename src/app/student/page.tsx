@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,9 +14,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
 import { getTutorResponse } from "@/lib/actions";
-import { getCourses, Course } from "@/lib/services";
+import { getCourses, Course, Student } from "@/lib/services";
 import { useToast } from "@/hooks/use-toast";
-
+import { getSession } from "@/lib/authService";
 
 type ChatMessage = {
   author: "user" | "bot";
@@ -24,12 +25,23 @@ type ChatMessage = {
 
 export default function StudentPage() {
   const { toast } = useToast();
+  const router = useRouter();
+  const [session, setSession] = useState<{ user: Student; role: 'student' } | null>(null);
   const [question, setQuestion] = useState("");
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [isAnswering, setIsAnswering] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoadingCourses, setIsLoadingCourses] = useState(true);
   const [activeCourseTopic, setActiveCourseTopic] = useState("your course");
+
+  useEffect(() => {
+    const currentSession = getSession();
+    if (!currentSession || currentSession.role !== 'student') {
+      router.push('/student/login');
+    } else {
+      setSession(currentSession as { user: Student; role: 'student' });
+    }
+  }, [router]);
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -85,6 +97,14 @@ export default function StudentPage() {
     }
     setIsAnswering(false);
   };
+  
+  if (!session) {
+    return (
+       <div className="flex justify-center items-center min-h-screen">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+    )
+  }
 
   return (
     <DashboardPage title="Student Dashboard" role="Student">

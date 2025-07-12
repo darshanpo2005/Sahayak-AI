@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -11,7 +12,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Home, LogOut, Settings, User } from "lucide-react";
+import { Home, LogOut, Settings, User, Loader2 } from "lucide-react";
+import { logout, getSession } from "@/lib/authService";
+import { useEffect, useState } from "react";
 
 type DashboardPageProps = {
   children: React.ReactNode;
@@ -19,7 +22,27 @@ type DashboardPageProps = {
   role: "Management" | "Teacher" | "Student";
 };
 
+type Session = {
+  user: { name: string; email: string };
+  role: 'student' | 'teacher';
+} | null;
+
 export function DashboardPage({ children, title, role }: DashboardPageProps) {
+  const router = useRouter();
+  const [session, setSession] = useState<Session>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // getSession is synchronous and reads from localStorage
+    const currentSession = getSession();
+    setSession(currentSession as Session);
+    setIsLoading(false);
+  }, []);
+
+  const handleLogout = () => {
+    logout();
+    router.push("/");
+  };
 
   const getProfileLink = () => {
     if (role === "Student") return "/profile/student";
@@ -56,16 +79,17 @@ export function DashboardPage({ children, title, role }: DashboardPageProps) {
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src="https://placehold.co/100x100.png" alt="User" data-ai-hint="user avatar" />
-                    <AvatarFallback>{role.charAt(0)}</AvatarFallback>
+                    {isLoading ? <AvatarFallback><Loader2 className="w-4 h-4 animate-spin" /></AvatarFallback> 
+                               : <AvatarFallback>{session?.user?.name?.charAt(0) || role.charAt(0)}</AvatarFallback>}
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{role} User</p>
+                    <p className="text-sm font-medium leading-none">{session?.user?.name || `${role} User`}</p>
                     <p className="text-xs leading-none text-muted-foreground">
-                      {role.toLowerCase()}@sahayak.com
+                      {session?.user?.email || `${role.toLowerCase()}@sahayak.com`}
                     </p>
                   </div>
                 </DropdownMenuLabel>
@@ -77,18 +101,16 @@ export function DashboardPage({ children, title, role }: DashboardPageProps) {
                    <Link href={getSettingsLink()}><Settings className="mr-2 h-4 w-4" />Settings</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                   <Link href="/"><LogOut className="mr-2 h-4 w-4" />Logout</Link>
+                <DropdownMenuItem onClick={handleLogout}>
+                   <LogOut className="mr-2 h-4 w-4" />Logout
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
            ) : (
-             <Link href="/">
-              <Button variant="outline" size="sm">
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
-              </Button>
-            </Link>
+            <Button variant="outline" size="sm" onClick={handleLogout}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
            )}
         </div>
       </header>

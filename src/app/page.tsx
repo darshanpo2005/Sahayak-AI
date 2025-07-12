@@ -22,14 +22,14 @@ export default function Home() {
       name: "Teacher",
       description: "Manage students, create lesson plans, and generate quizzes.",
       icon: <BookUser className="w-10 h-10 text-primary" />,
-      href: "/teacher",
+      href: "/teacher/login",
       isLink: true,
     },
     {
       name: "Student",
       description: "Access course materials, take quizzes, and get feedback.",
       icon: <GraduationCap className="w-10 h-10 text-primary" />,
-      href: "/student",
+      href: "/student/login",
       isLink: true,
     },
   ];

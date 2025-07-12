@@ -4,11 +4,14 @@ export interface Teacher {
   id: string;
   name: string;
   email: string;
+  password?: string; // Should be handled securely in a real app
 }
 
 export interface Student {
   id: string;
   name: string;
+  email: string;
+  password?: string; // Should be handled securely in a real app
   grade: string;
   teacherId: string;
 }
@@ -23,14 +26,14 @@ export interface Course {
 
 // Mock Database
 let mockTeachers: Teacher[] = [
-  { id: 't1', name: 'Jane Doe', email: 'jane.doe@school.com' },
-  { id: 't2', name: 'John Smith', email: 'john.smith@school.com' },
+  { id: 't1', name: 'Jane Doe', email: 'jane.doe@school.com', password: 'password123' },
+  { id: 't2', name: 'John Smith', email: 'john.smith@school.com', password: 'password123' },
 ];
 
 let mockStudents: Student[] = [
-  { id: 's1', name: 'Alex Doe', grade: '10th Grade', teacherId: 't1' },
-  { id: 's2', name: 'Sam Wilson', grade: '10th Grade', teacherId: 't1' },
-  { id: 's3', name: 'Maria Hill', grade: '11th Grade', teacherId: 't2' },
+  { id: 's1', name: 'Alex Doe', grade: '10th Grade', teacherId: 't1', email: 'alex.doe@school.com', password: 'password123' },
+  { id: 's2', name: 'Sam Wilson', grade: '10th Grade', teacherId: 't1', email: 'sam.wilson@school.com', password: 'password123' },
+  { id: 's3', name: 'Maria Hill', grade: '11th Grade', teacherId: 't2', email: 'maria.hill@school.com', password: 'password123' },
 ];
 
 let mockCourses: Course[] = [
@@ -86,6 +89,11 @@ export const deleteTeacher = async (id: string): Promise<void> => {
   mockCourses = mockCourses.map(c => c.teacherId === id ? { ...c, teacherId: '' } : c);
 };
 
+export const getTeacherByEmail = async (email: string): Promise<Teacher | null> => {
+  await delay(100);
+  return mockTeachers.find(t => t.email.toLowerCase() === email.toLowerCase()) || null;
+}
+
 // Student Services
 export const addStudent = async (student: Omit<Student, 'id'>): Promise<Student> => {
   await delay(300);
@@ -102,6 +110,11 @@ export const getStudents = async (): Promise<Student[]> => {
 export const getStudentByName = async (name: string): Promise<Student | null> => {
     await delay(100);
     return mockStudents.find(s => s.name === name) || null;
+}
+
+export const getStudentByEmail = async (email: string): Promise<Student | null> => {
+  await delay(100);
+  return mockStudents.find(s => s.email.toLowerCase() === email.toLowerCase()) || null;
 }
 
 export const getStudentsForTeacher = async (teacherId: string): Promise<Student[]> => {
@@ -135,7 +148,10 @@ export const getCoursesForTeacher = async (teacherId: string): Promise<Course[]>
 // For simplicity, we'll return all courses for any student.
 export const getCoursesForStudent = async (studentId: string): Promise<Course[]> => {
     await delay(200);
-    return getCourses();
+    const student = mockStudents.find(s => s.id === studentId);
+    if (!student) return [];
+    // A student sees courses taught by their assigned teacher
+    return mockCourses.filter(c => c.teacherId === student.teacherId);
 }
 
 export const deleteCourse = async (id: string): Promise<void> => {
@@ -143,5 +159,4 @@ export const deleteCourse = async (id: string): Promise<void> => {
   mockCourses = mockCourses.filter(c => c.id !== id);
 };
 
-// This is no longer needed but kept for compatibility with components that might import it.
 export const isFirebaseConfigured = true;

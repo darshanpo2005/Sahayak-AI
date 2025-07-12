@@ -69,9 +69,10 @@ export default function ManagementPage() {
     const form = e.target as HTMLFormElement;
     const name = (form.elements.namedItem("teacherName") as HTMLInputElement).value;
     const email = (form.elements.namedItem("teacherEmail") as HTMLInputElement).value;
+    const password = (form.elements.namedItem("teacherPassword") as HTMLInputElement).value;
 
     try {
-      await addTeacher({ name, email });
+      await addTeacher({ name, email, password });
       toast({
         title: "Teacher Added",
         description: `${name} has been added successfully.`,
@@ -94,11 +95,13 @@ export default function ManagementPage() {
     setIsAddingStudent(true);
     const form = e.target as HTMLFormElement;
     const name = (form.elements.namedItem("studentName") as HTMLInputElement).value;
+    const email = (form.elements.namedItem("studentEmail") as HTMLInputElement).value;
+    const password = (form.elements.namedItem("studentPassword") as HTMLInputElement).value;
     const grade = (form.elements.namedItem("studentGrade") as HTMLInputElement).value;
     const teacherId = (form.elements.namedItem("studentTeacher") as HTMLInputElement).value;
 
     try {
-      await addStudent({ name, grade, teacherId });
+      await addStudent({ name, email, password, grade, teacherId });
       toast({
         title: "Student Added",
         description: `${name} has been added successfully.`,
@@ -229,7 +232,7 @@ export default function ManagementPage() {
                 <CardTitle>Add a New Teacher</CardTitle>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleAddTeacher} className="grid md:grid-cols-3 gap-4 items-end">
+                <form onSubmit={handleAddTeacher} className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
                   <div className="grid gap-1.5">
                     <Label htmlFor="teacherName">Full Name</Label>
                     <Input id="teacherName" name="teacherName" placeholder="e.g., Jane Doe" required />
@@ -238,7 +241,11 @@ export default function ManagementPage() {
                     <Label htmlFor="teacherEmail">Email Address</Label>
                     <Input id="teacherEmail" name="teacherEmail" type="email" placeholder="e.g., jane.doe@school.com" required />
                   </div>
-                  <Button type="submit" className="w-full md:w-auto" disabled={isAddingTeacher}>
+                   <div className="grid gap-1.5">
+                    <Label htmlFor="teacherPassword">Password</Label>
+                    <Input id="teacherPassword" name="teacherPassword" type="password" required />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={isAddingTeacher}>
                     {isAddingTeacher ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
                      Add Teacher
                   </Button>
@@ -251,10 +258,18 @@ export default function ManagementPage() {
                 <CardTitle>Add a New Student</CardTitle>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleAddStudent} className="grid md:grid-cols-4 gap-4 items-end">
+                <form onSubmit={handleAddStudent} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 items-end">
                   <div className="grid gap-1.5">
                     <Label htmlFor="studentName">Full Name</Label>
                     <Input id="studentName" name="studentName" placeholder="e.g., Alex Doe" required />
+                  </div>
+                   <div className="grid gap-1.5">
+                    <Label htmlFor="studentEmail">Email Address</Label>
+                    <Input id="studentEmail" name="studentEmail" type="email" placeholder="e.g., alex.doe@school.com" required />
+                  </div>
+                   <div className="grid gap-1.5">
+                    <Label htmlFor="studentPassword">Password</Label>
+                    <Input id="studentPassword" name="studentPassword" type="password" required />
                   </div>
                   <div className="grid gap-1.5">
                     <Label htmlFor="studentGrade">Grade</Label>
@@ -271,7 +286,7 @@ export default function ManagementPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button type="submit" className="w-full md:w-auto" disabled={isAddingStudent}>
+                  <Button type="submit" className="w-full xl:col-span-5" disabled={isAddingStudent}>
                     {isAddingStudent ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
                      Add Student
                   </Button>
@@ -318,16 +333,18 @@ export default function ManagementPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
                         <TableHead>Grade</TableHead>
                         <TableHead>Assigned Teacher</TableHead>
                         <TableHead className="text-right">Action</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                       {isLoading && <TableRow><TableCell colSpan={4} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
+                       {isLoading && <TableRow><TableCell colSpan={5} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
                       {!isLoading && students.map((s) => (
                         <TableRow key={s.id}>
                           <TableCell className="font-medium">{s.name}</TableCell>
+                          <TableCell>{s.email}</TableCell>
                           <TableCell>{s.grade}</TableCell>
                           <TableCell>{teachers.find(t => t.id === s.teacherId)?.name || 'N/A'}</TableCell>
                           <TableCell className="text-right">
