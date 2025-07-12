@@ -15,16 +15,10 @@ const firebaseConfig = {
 };
 
 // Check if all firebase config values are provided
-const missingConfig = Object.entries(firebaseConfig).filter(([, value]) => !value);
+const isFirebaseConfigured = Object.values(firebaseConfig).every(Boolean);
 
-if (missingConfig.length > 0) {
-    const missingKeys = missingConfig.map(([key]) => key).join(", ");
-    throw new Error(`Missing Firebase configuration keys in .env file: ${missingKeys}. Please add them to your .env file.`);
-}
+// Initialize Firebase only if the config is valid
+const app = isFirebaseConfigured && !getApps().length ? initializeApp(firebaseConfig) : (isFirebaseConfigured ? getApp() : null);
+const db = isFirebaseConfigured ? getFirestore(app!) : null;
 
-
-// Initialize Firebase
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const db = getFirestore(app);
-
-export { app, db };
+export { app, db, isFirebaseConfigured };

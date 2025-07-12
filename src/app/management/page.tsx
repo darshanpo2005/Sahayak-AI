@@ -8,10 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Users, Building, BookOpen, Activity, PlusCircle, Loader2, Trash2 } from "lucide-react";
+import { Users, Building, BookOpen, Activity, PlusCircle, Loader2, Trash2, AlertTriangle } from "lucide-react";
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
-import { addTeacher, getTeachers, getStudents, getCourses, addCourse, Teacher, Student, Course, addStudent, deleteTeacher, deleteStudent, deleteCourse } from "@/lib/services";
+import { addTeacher, getTeachers, getStudents, getCourses, addCourse, Teacher, Student, Course, addStudent, deleteTeacher, deleteStudent, deleteCourse, isFirebaseConfigured } from "@/lib/services";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog,
@@ -23,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 type DeletionTarget = { type: 'teacher' | 'student' | 'course', id: string, name: string } | null;
 
@@ -38,6 +39,10 @@ export default function ManagementPage() {
   const [deletionTarget, setDeletionTarget] = useState<DeletionTarget>(null);
 
   const fetchDashboardData = async () => {
+    if (!isFirebaseConfigured) {
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     try {
       const [teachersData, studentsData, coursesData] = await Promise.all([
@@ -52,7 +57,7 @@ export default function ManagementPage() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to load dashboard data.",
+        description: "Failed to load dashboard data. Check your Firebase connection and security rules.",
       });
     } finally {
       setIsLoading(false);
@@ -173,6 +178,27 @@ export default function ManagementPage() {
       setDeletionTarget(null);
     }
   };
+
+  if (!isFirebaseConfigured) {
+    return (
+      <DashboardPage title="Configuration Needed" role="Management">
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Firebase Not Configured</AlertTitle>
+          <AlertDescription>
+            <p className="mb-2">Your application is not connected to a database. Please follow these steps:</p>
+            <ol className="list-decimal list-inside space-y-1">
+              <li>Go to the <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className="underline">Firebase Console</a> and create a project.</li>
+              <li>In your project settings, find your web app's configuration credentials.</li>
+              <li>Copy these keys into the <strong>.env</strong> file in the root of your project.</li>
+              <li>Make sure the keys are prefixed with <strong>NEXT_PUBLIC_FIREBASE_</strong> (e.g., NEXT_PUBLIC_FIREBASE_API_KEY).</li>
+            </ol>
+             <p className="mt-4">After adding the keys, this page will work correctly.</p>
+          </AlertDescription>
+        </Alert>
+      </DashboardPage>
+    );
+  }
 
   return (
     <DashboardPage title="Management Dashboard" role="Management">
@@ -414,7 +440,7 @@ export default function ManagementPage() {
                     </TableBody>
                   </Table>
               </CardContent>
-            </Card>
+            </card>
           </div>
         </TabsContent>
       </Tabs>
