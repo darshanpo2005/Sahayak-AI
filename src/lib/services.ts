@@ -9,6 +9,14 @@ export interface Teacher {
   password?: string; // Should be handled securely in a real app
 }
 
+export interface Fee {
+  id: string;
+  name: string;
+  amount: number;
+  dueDate: string; // YYYY-MM-DD
+  status: 'Paid' | 'Unpaid';
+}
+
 export interface Student {
   id: string;
   name: string;
@@ -16,6 +24,7 @@ export interface Student {
   password?: string; // Should be handled securely in a real app
   grade: string;
   teacherId: string;
+  fees?: Fee[];
 }
 
 export interface Course {
@@ -52,9 +61,30 @@ const defaultTeachers: Teacher[] = [
 ];
 
 const defaultStudents: Student[] = [
-  { id: 's1', name: 'Alex Doe', grade: '10th Grade', teacherId: 't1', email: 'alex.doe@school.com', password: 'password123' },
+  { 
+    id: 's1', 
+    name: 'Alex Doe', 
+    grade: '10th Grade', 
+    teacherId: 't1', 
+    email: 'alex.doe@school.com', 
+    password: 'password123',
+    fees: [
+        { id: 'f1', name: 'Annual Tuition Fee', amount: 1200.00, dueDate: '2024-08-01', status: 'Unpaid' },
+        { id: 'f2', name: 'Library Fee', amount: 50.00, dueDate: '2024-08-01', status: 'Unpaid' },
+    ]
+  },
   { id: 's2', name: 'Sam Wilson', grade: '10th Grade', teacherId: 't1', email: 'sam.wilson@school.com', password: 'password123' },
-  { id: 's3', name: 'Maria Hill', grade: '11th Grade', teacherId: 't2', email: 'maria.hill@school.com', password: 'password123' },
+  { 
+    id: 's3', 
+    name: 'Maria Hill', 
+    grade: '11th Grade', 
+    teacherId: 't2', 
+    email: 'maria.hill@school.com', 
+    password: 'password123',
+    fees: [
+        { id: 'f3', name: 'Annual Tuition Fee', amount: 1350.00, dueDate: '2024-08-01', status: 'Paid' },
+    ]
+  },
 ];
 
 const defaultCourses: Course[] = [
@@ -322,6 +352,31 @@ export const getAttendanceForStudent = async (studentId: string): Promise<Attend
         .filter(r => r.studentId === studentId)
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
+
+// Fee Services
+export const getFeesForStudent = async (studentId: string): Promise<Fee[]> => {
+    await delay(200);
+    mockStudents = getFromStorage('mock_students', defaultStudents);
+    const student = mockStudents.find(s => s.id === studentId);
+    return student?.fees || [];
+};
+
+export const payFee = async (studentId: string, feeId: string): Promise<void> => {
+    await delay(200);
+    mockStudents = getFromStorage('mock_students', defaultStudents);
+    const studentIndex = mockStudents.findIndex(s => s.id === studentId);
+    if (studentIndex > -1) {
+        const feeIndex = mockStudents[studentIndex].fees?.findIndex(f => f.id === feeId);
+        if (feeIndex !== undefined && feeIndex > -1) {
+            mockStudents[studentIndex].fees![feeIndex].status = 'Paid';
+            saveToStorage('mock_students', mockStudents);
+        } else {
+            throw new Error("Fee not found");
+        }
+    } else {
+        throw new Error("Student not found");
+    }
+};
 
 
 export const isFirebaseConfigured = true;

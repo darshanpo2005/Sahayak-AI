@@ -30,6 +30,7 @@ import {
   MessageSquare,
   BarChart3,
   Lightbulb,
+  CreditCard,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,7 @@ const navItems = {
     { href: "/student/quizzes", label: "Quizzes", icon: HelpCircle },
     { href: "/student/attendance", label: "Attendance", icon: CalendarCheck },
     { href: "/student/tutor", label: "AI Tutor", icon: MessageSquare },
+    { href: "/student/fees", label: "Fee Payment", icon: CreditCard },
   ],
   teacher: [
     { href: "/teacher", label: "Dashboard", icon: LayoutDashboard },
