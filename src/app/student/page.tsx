@@ -1,12 +1,11 @@
 
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Book, Send, Bot, Loader2, CalendarCheck, Film, Award, CheckCircle, User, Video, HelpCircle, XCircle, Trophy } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -22,10 +21,8 @@ import { format } from "date-fns";
 
 // Simulate progress for each course
 const useSimulatedProgress = (courses: Course[]) => {
-  const [progress, setProgress] = useState<Record<string, number>>({});
-
-  useEffect(() => {
-    if (courses.length === 0) return;
+  const progress = useMemo(() => {
+    if (courses.length === 0) return {};
     const newProgress: Record<string, number> = {};
     courses.forEach(course => {
       // Create a stable but pseudo-random progress value based on course ID
@@ -34,7 +31,7 @@ const useSimulatedProgress = (courses: Course[]) => {
         newProgress[course.id] = pseudoRandom;
       }
     });
-    setProgress(newProgress);
+    return newProgress;
   }, [courses]);
 
   return progress;
@@ -61,7 +58,7 @@ export default function StudentPage() {
   useEffect(() => {
     const fetchStudentData = async () => {
       if (!session) return;
-      
+      setIsLoading(true);
       try {
         const coursesData = await getCoursesForStudent(session.user.id);
         

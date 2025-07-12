@@ -27,7 +27,7 @@ export default function TeacherPage() {
   useEffect(() => {
     const fetchInitialData = async () => {
       if (!session) return;
-      
+      setIsLoading(true);
       try {
         const [studentsData, coursesData] = await Promise.all([
            getStudentsForTeacher(session.user.id),

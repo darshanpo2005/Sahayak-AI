@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react";
@@ -7,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableRow, TableHead, TableHeader } from "@/components/ui/table";
 import { BookOpen, User, Loader2 } from "lucide-react";
-import { getCoursesForStudent, getTeacherById, Course, Student, Teacher } from "@/lib/services";
+import { getCoursesForStudent, getTeacherById, Course, Student, Teacher, getTeachers } from "@/lib/services";
 import { useToast } from "@/hooks/use-toast";
 import { getSession } from "@/lib/authService";
 
@@ -33,18 +34,20 @@ export default function StudentProfilePage() {
       if (!student) return;
       setIsLoading(true);
       try {
-        const coursesData = await getCoursesForStudent(student.id!);
+        // Fetch courses and all teachers in parallel for efficiency
+        const [coursesData, allTeachers] = await Promise.all([
+          getCoursesForStudent(student.id!),
+          getTeachers(),
+        ]);
+        
         setEnrolledCourses(coursesData);
 
-        const teacherIds = [...new Set(coursesData.map(c => c.teacherId))];
-        const teacherPromises = teacherIds.map(id => getTeacherById(id));
-        const teachersData = await Promise.all(teacherPromises);
-        
         const teachersMap: Record<string, Teacher> = {};
-        teachersData.forEach(t => {
-          if (t) teachersMap[t.id!] = t;
+        allTeachers.forEach(t => {
+          if (t.id) teachersMap[t.id] = t;
         });
         setTeachers(teachersMap);
+        
       } catch (error) {
         console.error(error);
         toast({
