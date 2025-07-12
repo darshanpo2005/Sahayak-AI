@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Users, Building, BookOpen, Activity, PlusCircle, Loader2, Trash2 } from "lucide-react";
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
-import { addTeacher, getTeachers, getStudents, getCourses, addCourse, Teacher, Student, Course, addStudent, deleteTeacher, deleteStudent } from "@/lib/services";
+import { addTeacher, getTeachers, getStudents, getCourses, addCourse, Teacher, Student, Course, addStudent, deleteTeacher, deleteStudent, deleteCourse } from "@/lib/services";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog,
@@ -24,7 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
-type DeletionTarget = { type: 'teacher' | 'student', id: string, name: string } | null;
+type DeletionTarget = { type: 'teacher' | 'student' | 'course', id: string, name: string } | null;
 
 export default function ManagementPage() {
   const { toast } = useToast();
@@ -153,8 +153,10 @@ export default function ManagementPage() {
     try {
       if (deletionTarget.type === 'teacher') {
         await deleteTeacher(deletionTarget.id);
-      } else {
+      } else if (deletionTarget.type === 'student') {
         await deleteStudent(deletionTarget.id);
+      } else if (deletionTarget.type === 'course') {
+        await deleteCourse(deletionTarget.id);
       }
       toast({
         title: `${deletionTarget.type.charAt(0).toUpperCase() + deletionTarget.type.slice(1)} Deleted`,
@@ -403,7 +405,9 @@ export default function ManagementPage() {
                           <TableCell>{teachers.find(t => t.id === c.teacherId)?.name || 'N/A'}</TableCell>
                           <TableCell>{c.modules.length}</TableCell>
                           <TableCell className="text-right">
-                            <Button variant="outline" size="sm" disabled>Edit</Button>
+                             <Button variant="destructive" size="sm" onClick={() => setDeletionTarget({ type: 'course', id: c.id!, name: c.title })}>
+                                <Trash2 className="h-4 w-4" />
+                             </Button>
                           </TableCell>
                         </TableRow>
                       ))}

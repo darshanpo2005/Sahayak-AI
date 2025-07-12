@@ -135,3 +135,12 @@ export const getCoursesForTeacher = async (teacherId: string): Promise<Course[]>
 export const getCoursesForStudent = async (studentId: string): Promise<Course[]> => {
     return getCourses();
 }
+
+export const deleteCourse = async (id: string) => {
+  try {
+    await deleteDoc(doc(db, 'courses', id));
+  } catch (e) {
+    console.error("Error deleting document: ", e);
+    throw new Error("Could not delete course");
+  }
+};
