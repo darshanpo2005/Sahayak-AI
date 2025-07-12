@@ -32,6 +32,7 @@ import {
   BarChart3,
   Lightbulb,
   CreditCard,
+  Loader2,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -51,7 +52,6 @@ type DashboardLayoutProps = {
 const navItems = {
   student: [
     { href: "/student", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/student/courses", label: "My Courses", icon: Book },
     { href: "/student/quizzes", label: "Quizzes", icon: HelpCircle },
     { href: "/student/attendance", label: "Attendance", icon: CalendarCheck },
     { href: "/student/tutor", label: "AI Tutor", icon: MessageSquare },
@@ -81,18 +81,21 @@ const roleDetails = {
     icon: GraduationCap,
     profileLink: "/profile/student",
     settingsLink: "/settings/student",
+    loginLink: "/student/login",
   },
   teacher: {
     name: "Teacher",
     icon: BookUser,
     profileLink: "/profile/teacher",
     settingsLink: "/settings/teacher",
+    loginLink: "/teacher/login",
   },
   management: {
     name: "Management",
     icon: Shield,
     profileLink: "#",
     settingsLink: "#",
+    loginLink: "/",
   },
 };
 
@@ -102,46 +105,41 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
   const [session, setSession] = useState<Session>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const currentRoleDetails = roleDetails[role];
+
   useEffect(() => {
     const currentSession = getSession();
     if (!currentSession || currentSession.role !== role) {
       logout(); // Clear any invalid session
-      if (role === 'student') router.push("/student/login");
-      if (role === 'teacher') router.push("/teacher/login");
-      // Management has its own logic in the page for now
+      router.push(currentRoleDetails.loginLink);
     } else {
       setSession(currentSession as Session);
+      setIsLoading(false);
     }
-    setIsLoading(false);
-  }, [role, router]);
+  }, [role, router, currentRoleDetails.loginLink]);
 
   const handleLogout = () => {
     logout();
     router.push("/");
   };
 
-  const currentRoleDetails = roleDetails[role];
   const currentNavItems = navItems[role];
 
   const pageTitle = useMemo(() => {
-    const activeItem = currentNavItems.find(item => pathname.startsWith(item.href));
-    if (pathname === '/student') return 'Dashboard';
-    if (pathname === '/teacher') return 'Dashboard';
+    if (pathname.startsWith('/profile')) return 'Profile';
+    if (pathname.startsWith('/settings')) return 'Settings';
+
+    const activeItem = currentNavItems.find(item => pathname === item.href);
     return activeItem?.label || roleDetails[role].name + " Dashboard";
   }, [pathname, currentNavItems, role]);
 
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="flex items-center justify-center h-screen bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
-  }
-  
-  // If no session for protected roles, we show nothing while redirecting
-  if (!session && role !== 'management') {
-    return null;
   }
 
   return (
@@ -164,7 +162,7 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
               <SidebarMenuItem key={item.href}>
                 <Link href={item.href}>
                   <SidebarMenuButton
-                    isActive={pathname.startsWith(item.href)}
+                    isActive={pathname === item.href}
                     tooltip={{ children: item.label }}
                   >
                     <item.icon />
@@ -180,7 +178,7 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
           <SidebarMenu>
             <SidebarMenuItem>
               <Link href={currentRoleDetails.profileLink}>
-                <SidebarMenuButton tooltip={{children: "Profile"}}>
+                <SidebarMenuButton tooltip={{children: "Profile"}} isActive={pathname.startsWith('/profile')}>
                   <User />
                   <span>Profile</span>
                 </SidebarMenuButton>
@@ -188,7 +186,7 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
             </SidebarMenuItem>
             <SidebarMenuItem>
               <Link href={currentRoleDetails.settingsLink}>
-                <SidebarMenuButton tooltip={{children: "Settings"}}>
+                <SidebarMenuButton tooltip={{children: "Settings"}} isActive={pathname.startsWith('/settings')}>
                   <Settings />
                   <span>Settings</span>
                 </SidebarMenuButton>

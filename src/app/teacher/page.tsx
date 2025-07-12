@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -26,7 +27,7 @@ export default function TeacherPage() {
   useEffect(() => {
     const fetchInitialData = async () => {
       if (!session) return;
-      setIsLoading(true);
+      
       try {
         const [studentsData, coursesData] = await Promise.all([
            getStudentsForTeacher(session.user.id),
@@ -49,9 +50,9 @@ export default function TeacherPage() {
     }
   }, [session, toast]);
 
-  if (!session) {
+  if (isLoading || !session) {
     return (
-       <div className="flex justify-center items-center min-h-screen">
+       <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]">
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
     )

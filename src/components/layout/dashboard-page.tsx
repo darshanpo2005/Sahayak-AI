@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -36,7 +37,12 @@ export function DashboardPage({ children, title, role }: DashboardPageProps) {
     // getSession is synchronous and reads from localStorage
     const currentSession = getSession();
     
-    if (role !== "Management" && (!currentSession || currentSession.role !== role.toLowerCase())) {
+    if (role === "Management") {
+      setIsLoading(false);
+      return;
+    }
+
+    if (!currentSession || currentSession.role !== role.toLowerCase()) {
         logout();
         router.push(role === "Student" ? "/student/login" : "/teacher/login");
     } else {
@@ -93,8 +99,7 @@ export function DashboardPage({ children, title, role }: DashboardPageProps) {
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={`https://placehold.co/100x100.png?text=${session?.user?.name?.charAt(0)}`} alt="User" data-ai-hint="user avatar" />
-                    {isLoading ? <AvatarFallback><Loader2 className="w-4 h-4 animate-spin" /></AvatarFallback> 
-                               : <AvatarFallback>{session?.user?.name?.charAt(0) || role.charAt(0)}</AvatarFallback>}
+                    <AvatarFallback>{session?.user?.name?.charAt(0) || role.charAt(0)}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>

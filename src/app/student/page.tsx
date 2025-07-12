@@ -2,7 +2,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
@@ -45,8 +44,10 @@ const useSimulatedProgress = (courses: Course[]) => {
     const newProgress: Record<string, number> = {};
     courses.forEach(course => {
       // Create a stable but pseudo-random progress value based on course ID
-      const pseudoRandom = (course.id!.charCodeAt(1) % 5) * 20 + 10;
-      newProgress[course.id!] = pseudoRandom;
+      if (course.id) {
+        const pseudoRandom = (course.id.charCodeAt(1) % 5) * 20 + 10;
+        newProgress[course.id] = pseudoRandom;
+      }
     });
     setProgress(newProgress);
   }, [courses]);
@@ -59,7 +60,7 @@ export default function StudentPage() {
   const { toast } = useToast();
   const [session, setSession] = useState<{ user: Student; role: 'student' } | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
-  const [isLoadingCourses, setIsLoadingCourses] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [isGeneratingCert, setIsGeneratingCert] = useState<string | null>(null);
   const courseProgress = useSimulatedProgress(courses);
 
@@ -75,7 +76,7 @@ export default function StudentPage() {
   useEffect(() => {
     const fetchStudentData = async () => {
       if (!session) return;
-      setIsLoadingCourses(true);
+      
       try {
         const coursesData = await getCoursesForStudent(session.user.id);
         
@@ -88,7 +89,7 @@ export default function StudentPage() {
           description: "Failed to load dashboard data.",
         });
       } finally {
-        setIsLoadingCourses(false);
+        setIsLoading(false);
       }
     };
     if (session) {
@@ -119,9 +120,9 @@ export default function StudentPage() {
     setIsGeneratingCert(null);
   }
 
-  if (!session) {
+  if (isLoading || !session) {
     return (
-       <div className="flex justify-center items-center min-h-screen">
+       <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]">
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
     )
@@ -142,10 +143,14 @@ export default function StudentPage() {
             <CardDescription>Access your enrolled courses, modules, and track your progress.</CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoadingCourses ? (
+            {isLoading ? (
               <div className="flex justify-center items-center h-40">
                 <Loader2 className="h-8 w-8 animate-spin" />
               </div>
+            ) : courses.length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">
+                  You are not enrolled in any courses yet.
+                </div>
             ) : (
               <Accordion type="single" collapsible className="w-full">
                 {courses.map((course) => (
