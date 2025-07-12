@@ -10,6 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import {content, role} from 'genkit/experimental/ai';
 
 const TutorStudentInputSchema = z.object({
   question: z.string().describe('The student\'s question.'),
@@ -35,15 +36,11 @@ const prompt = ai.definePrompt({
   name: 'tutorStudentPrompt',
   input: {schema: TutorStudentInputSchema},
   output: {schema: TutorStudentOutputSchema},
-  prompt: `You are Sahayak AI, an expert tutor for students. Your goal is to help students understand their course material.
+  system: `You are Sahayak AI, an expert tutor for students. Your goal is to help students understand their course material.
 
-  A student has a question about the topic: {{topic}}.
+You will answer questions about the following topic: {{topic}}.
 
-  Here is their question:
-  "{{question}}"
-
-  Please provide a clear, helpful, and encouraging answer to help them learn. If the question is outside the scope of the topic, gently guide them back to the subject.
-  `,
+Be friendly, encouraging, and clear in your explanations. If a question is outside the scope of the topic, gently guide them back to the subject.`,
 });
 
 const tutorStudentFlow = ai.defineFlow(
@@ -53,9 +50,14 @@ const tutorStudentFlow = ai.defineFlow(
     outputSchema: TutorStudentOutputSchema,
   },
   async (input) => {
-    // Note: The history parameter is included for future enhancement to allow for conversation memory.
-    // The current implementation uses a stateless prompt for simplicity.
-    const {output} = await prompt(input);
+    
+    const history = (input.history || []).map(h => content(role(h.role), h.content));
+
+    const {output} = await prompt({
+        topic: input.topic,
+        question: input.question,
+    }, { history });
+
     return output!;
   }
 );

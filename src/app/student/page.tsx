@@ -1,16 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Book, MessageSquare, Send, Bot, Loader2, CalendarCheck, Film, Award, CheckCircle } from "lucide-react";
+import { Book, MessageSquare, Send, Bot, Loader2, CalendarCheck, Film, Award, CheckCircle, User } from "lucide-react";
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
 import { getTutorResponse, getCertificate } from "@/lib/actions";
@@ -29,6 +29,7 @@ const useSimulatedProgress = (courses: Course[]) => {
   const [progress, setProgress] = useState<Record<string, number>>({});
 
   useEffect(() => {
+    if (courses.length === 0) return;
     const newProgress: Record<string, number> = {};
     courses.forEach(course => {
       // Create a stable but pseudo-random progress value based on course ID
@@ -54,6 +55,7 @@ export default function StudentPage() {
   const [activeCourseTopic, setActiveCourseTopic] = useState("your course");
   const [isGeneratingCert, setIsGeneratingCert] = useState<string | null>(null);
   const courseProgress = useSimulatedProgress(courses);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
 
   useEffect(() => {
@@ -106,18 +108,23 @@ export default function StudentPage() {
     setQuestion("");
     setIsAnswering(true);
 
-    const result = await getTutorResponse({
-      question: currentQuestion,
-      topic: activeCourseTopic,
-      history: chatHistory.map(chat => ({ role: chat.author === 'user' ? 'user' : 'model', content: chat.message })),
-    });
+    try {
+        const result = await getTutorResponse({
+          question: currentQuestion,
+          topic: activeCourseTopic,
+          history: chatHistory.map(chat => ({ role: chat.author === 'user' ? 'user' : 'model', content: chat.message })),
+        });
 
-    if (result.success) {
-      setChatHistory([...newHistory, { author: "bot", message: result.data.answer }]);
-    } else {
-      setChatHistory([...newHistory, { author: "bot", message: `Sorry, I encountered an error: ${result.error}` }]);
+        if (result.success) {
+          setChatHistory(prev => [...prev, { author: "bot", message: result.data.answer }]);
+        } else {
+          setChatHistory(prev => [...prev, { author: "bot", message: `Sorry, I encountered an error: ${result.error}` }]);
+        }
+    } catch (error) {
+        setChatHistory(prev => [...prev, { author: "bot", message: `Sorry, an unexpected error occurred.` }]);
+    } finally {
+        setIsAnswering(false);
     }
-    setIsAnswering(false);
   };
 
   const handleGenerateCertificate = async (courseName: string) => {
@@ -143,6 +150,16 @@ export default function StudentPage() {
     setIsGeneratingCert(null);
   }
   
+    useEffect(() => {
+        // Auto-scroll to the bottom of the chat
+        if (scrollAreaRef.current) {
+            const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+            if (viewport) {
+                viewport.scrollTop = viewport.scrollHeight;
+            }
+        }
+    }, [chatHistory]);
+
   if (!session) {
     return (
        <div className="flex justify-center items-center min-h-screen">
@@ -173,9 +190,13 @@ export default function StudentPage() {
                 </div>
               ) : (
                 <Accordion type="single" collapsible className="w-full" onValueChange={(value) => {
-                    const selectedCourse = courses.find(c => c.id === value);
-                    if (selectedCourse) {
-                      setActiveCourseTopic(selectedCourse.title);
+                    if (value) {
+                        const selectedCourse = courses.find(c => c.id === value);
+                        if (selectedCourse) {
+                          setActiveCourseTopic(selectedCourse.title);
+                          // Clear chat history when switching courses
+                          setChatHistory([]);
+                        }
                     }
                 }}>
                   {courses.map((course) => (
@@ -270,25 +291,37 @@ export default function StudentPage() {
               <CardTitle>AI Tutor</CardTitle>
               <CardDescription>Get help with your course content. Currently selected: <span className="font-semibold text-primary">{activeCourseTopic}</span></CardDescription>
             </CardHeader>
-            <CardContent className="flex-grow overflow-hidden">
-                <ScrollArea className="h-full pr-4">
+            <CardContent className="flex-grow overflow-hidden flex flex-col">
+                <ScrollArea className="flex-grow pr-4" ref={scrollAreaRef}>
                   <div className="space-y-4">
+                  {chatHistory.length === 0 && (
+                     <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                        <MessageSquare className="w-16 h-16 mb-4" />
+                        <p>Ask a question to get started.</p>
+                        <p className="text-sm">For example: "What was the main idea of {activeCourseTopic}?"</p>
+                     </div>
+                  )}
                   {chatHistory.map((chat, index) => (
                     <div key={index} className={`flex items-start gap-3 ${chat.author === 'user' ? 'justify-end' : ''}`}>
-                      {chat.author === 'bot' && (
-                        <Avatar>
-                          <AvatarFallback><Bot /></AvatarFallback>
+                      {chat.author === 'bot' ? (
+                        <Avatar className="w-8 h-8">
+                            <AvatarFallback className="bg-primary text-primary-foreground"><Bot className="w-5 h-5"/></AvatarFallback>
                         </Avatar>
-                      )}
+                      ) : null}
                        <div className={`rounded-lg px-4 py-2 max-w-[85%] whitespace-pre-wrap font-sans text-sm ${chat.author === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                         <p>{chat.message}</p>
                       </div>
+                       {chat.author === 'user' ? (
+                        <Avatar className="w-8 h-8">
+                            <AvatarFallback><User className="w-5 h-5" /></AvatarFallback>
+                        </Avatar>
+                      ) : null}
                     </div>
                   ))}
                   {isAnswering && (
                      <div className="flex items-start gap-3">
-                       <Avatar>
-                          <AvatarFallback><Bot /></AvatarFallback>
+                       <Avatar className="w-8 h-8">
+                          <AvatarFallback className="bg-primary text-primary-foreground"><Bot className="w-5 h-5"/></AvatarFallback>
                         </Avatar>
                         <div className="rounded-lg px-4 py-3 bg-muted">
                            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -298,7 +331,7 @@ export default function StudentPage() {
                   </div>
                 </ScrollArea>
             </CardContent>
-            <CardHeader className="pt-0">
+            <CardHeader className="pt-0 border-t">
               <form onSubmit={handleQuestionSubmit} className="flex gap-2">
                 <Input
                   value={question}
@@ -306,8 +339,8 @@ export default function StudentPage() {
                   placeholder={`Ask about ${activeCourseTopic}...`}
                   disabled={isAnswering}
                 />
-                <Button type="submit" disabled={isAnswering}>
-                  <Send className="w-4 h-4" />
+                <Button type="submit" disabled={!question.trim() || isAnswering}>
+                  {isAnswering ? <Loader2 className="w-4 h-4 animate-spin"/> : <Send className="w-4 h-4" />}
                 </Button>
               </form>
             </CardHeader>
