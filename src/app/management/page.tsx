@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Users, Building, BookOpen, Activity, PlusCircle, Loader2, Trash2, Edit } from "lucide-react";
+import { Users, Building, BookOpen, Activity, PlusCircle, Loader2, Trash2, Edit, Search } from "lucide-react";
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
 import { addTeacher, getTeachers, getStudents, getCourses, addCourse, Teacher, Student, Course, addStudent, deleteTeacher, deleteStudent, deleteCourse, updateTeacher, updateStudent, updateCourse } from "@/lib/services";
@@ -49,6 +49,7 @@ export default function ManagementPage() {
   const [deletionTarget, setDeletionTarget] = useState<DeletionTarget>(null);
   const [editingTarget, setEditingTarget] = useState<EditingTarget>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [studentSearch, setStudentSearch] = useState("");
 
   const fetchDashboardData = async () => {
     setIsLoading(true);
@@ -246,6 +247,13 @@ export default function ManagementPage() {
     }
   }
 
+  const filteredStudents = useMemo(() => {
+    return students.filter(student =>
+      student.name.toLowerCase().includes(studentSearch.toLowerCase()) ||
+      student.email.toLowerCase().includes(studentSearch.toLowerCase())
+    );
+  }, [students, studentSearch]);
+
   return (
     <DashboardPage title="Management Dashboard" role="Management">
       <Tabs defaultValue="status">
@@ -401,6 +409,15 @@ export default function ManagementPage() {
              <Card>
               <CardHeader>
                 <CardTitle>Manage Students</CardTitle>
+                <div className="relative mt-2">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Search by name or email..."
+                        className="pl-8"
+                        value={studentSearch}
+                        onChange={(e) => setStudentSearch(e.target.value)}
+                    />
+                </div>
               </CardHeader>
               <CardContent>
                  <Table>
@@ -416,7 +433,7 @@ export default function ManagementPage() {
                     </TableHeader>
                     <TableBody>
                        {isLoading && <TableRow><TableCell colSpan={6} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
-                      {!isLoading && students.map((s) => (
+                      {!isLoading && filteredStudents.map((s) => (
                         <TableRow key={s.id}>
                           <TableCell className="font-medium">{s.name}</TableCell>
                           <TableCell>{s.email}</TableCell>
@@ -433,6 +450,13 @@ export default function ManagementPage() {
                           </TableCell>
                         </TableRow>
                       ))}
+                      {!isLoading && filteredStudents.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center text-muted-foreground">
+                            No students found.
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
               </CardContent>
