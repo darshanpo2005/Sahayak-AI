@@ -51,6 +51,7 @@ const db = globalForDb.db ?? {
   teachers: [
     { id: 't1', name: 'Jane Doe', email: 'jane.doe@school.com', password: 'password123', role: 'teacher' },
     { id: 't2', name: 'John Smith', email: 'john.smith@school.com', password: 'password123', role: 'teacher' },
+    { id: 't0', name: 'Admin User', email: 'admin@sahayak.com', password: 'SahayakAdmin123', role: 'admin' },
   ],
   students: [
     { id: 's1', name: 'Alex Doe', grade: '10th Grade', teacherId: 't1', email: 'alex.doe@school.com', password: 'password123' },
