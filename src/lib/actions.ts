@@ -1,4 +1,4 @@
-"use server";
+'use server';
 
 import { generateLessonPlanAssistance, GenerateLessonPlanAssistanceInput, GenerateLessonPlanAssistanceOutput } from "@/ai/flows/generate-lesson-plan-assistance";
 import { generateQuizQuestions, GenerateQuizQuestionsInput, GenerateQuizQuestionsOutput } from "@/ai/flows/generate-quiz-questions";
