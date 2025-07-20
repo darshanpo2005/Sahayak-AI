@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Users, Building, BookOpen, Activity, PlusCircle, Loader2, Trash2, Edit } from "lucide-react";
+import { Users, Building, BookOpen, Activity, PlusCircle, Loader2, Trash2, Edit, ShieldCheck } from "lucide-react";
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
 import { addTeacher, getTeachers, getStudents, getCourses, addCourse, Teacher, Student, Course, addStudent, deleteTeacher, deleteStudent, deleteCourse, updateTeacher, updateStudent, updateCourse } from "@/lib/services";
@@ -32,6 +32,7 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 
 
 type DeletionTarget = { type: 'teacher' | 'student' | 'course', id: string, name: string } | null;
@@ -83,12 +84,13 @@ export default function ManagementPage() {
     const name = (form.elements.namedItem("teacherName") as HTMLInputElement).value;
     const email = (form.elements.namedItem("teacherEmail") as HTMLInputElement).value;
     const password = (form.elements.namedItem("teacherPassword") as HTMLInputElement).value;
+    const role = (form.elements.namedItem("teacherRole") as HTMLInputElement).value as 'teacher' | 'admin';
 
     try {
-      await addTeacher({ name, email, password });
+      await addTeacher({ name, email, password, role });
       toast({
-        title: "Teacher Added",
-        description: `${name} has been added successfully.`,
+        title: "User Added",
+        description: `${name} has been added successfully as a ${role}.`,
       });
       form.reset();
       fetchDashboardData(); // Refresh data
@@ -96,7 +98,7 @@ export default function ManagementPage() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Could not add the teacher.",
+        description: "Could not add the user.",
       });
     } finally {
       setIsAddingTeacher(false);
@@ -204,6 +206,7 @@ export default function ManagementPage() {
                 name: (form.elements.namedItem("editTeacherName") as HTMLInputElement).value,
                 email: (form.elements.namedItem("editTeacherEmail") as HTMLInputElement).value,
                 password: (form.elements.namedItem("editTeacherPassword") as HTMLInputElement).value,
+                role: (form.elements.namedItem("editTeacherRole") as HTMLSelectElement).value as 'teacher' | 'admin',
             };
             await updateTeacher(updatedData.id, updatedData);
         } else if (editingTarget.type === 'student') {
@@ -266,7 +269,7 @@ export default function ManagementPage() {
             <CardContent className="grid gap-4 md:grid-cols-3">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Registered Teachers</CardTitle>
+                  <CardTitle className="text-sm font-medium">Staff Accounts</CardTitle>
                   <Building className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -298,10 +301,10 @@ export default function ManagementPage() {
         <TabsContent value="users" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Add a New Teacher</CardTitle>
+                <CardTitle>Add New Staff (Teacher/Admin)</CardTitle>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleAddTeacher} className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                <form onSubmit={handleAddTeacher} className="grid md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
                   <div className="grid gap-1.5">
                     <Label htmlFor="teacherName">Full Name</Label>
                     <Input id="teacherName" name="teacherName" placeholder="e.g., Jane Doe" required />
@@ -314,9 +317,21 @@ export default function ManagementPage() {
                     <Label htmlFor="teacherPassword">Password</Label>
                     <Input id="teacherPassword" name="teacherPassword" type="password" required />
                   </div>
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="teacherRole">Role</Label>
+                    <Select name="teacherRole" defaultValue="teacher" required>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="teacher">Teacher</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <Button type="submit" className="w-full" disabled={isAddingTeacher}>
                     {isAddingTeacher ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                     Add Teacher
+                     Add Staff
                   </Button>
                 </form>
               </CardContent>
@@ -351,7 +366,7 @@ export default function ManagementPage() {
                         <SelectValue placeholder="Select a teacher" />
                       </SelectTrigger>
                       <SelectContent>
-                        {teachers.map(t => <SelectItem key={t.id} value={t.id!}>{t.name}</SelectItem>)}
+                        {teachers.filter(t => t.role !== 'admin').map(t => <SelectItem key={t.id} value={t.id!}>{t.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
@@ -365,7 +380,7 @@ export default function ManagementPage() {
 
              <Card>
               <CardHeader>
-                <CardTitle>Manage Teachers</CardTitle>
+                <CardTitle>Manage Staff</CardTitle>
               </CardHeader>
               <CardContent>
                  <Table>
@@ -373,16 +388,23 @@ export default function ManagementPage() {
                       <TableRow>
                         <TableHead>Name</TableHead>
                         <TableHead>Email</TableHead>
+                        <TableHead>Role</TableHead>
                         <TableHead>Password</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {isLoading && <TableRow><TableCell colSpan={4} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
+                      {isLoading && <TableRow><TableCell colSpan={5} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
                       {!isLoading && teachers.map((t) => (
                         <TableRow key={t.id}>
                           <TableCell className="font-medium">{t.name}</TableCell>
                           <TableCell>{t.email}</TableCell>
+                          <TableCell>
+                            <Badge variant={t.role === 'admin' ? 'default' : 'secondary'}>
+                                {t.role === 'admin' && <ShieldCheck className="mr-1 h-3 w-3" />}
+                                {t.role?.charAt(0).toUpperCase() + t.role?.slice(1) || 'Teacher'}
+                            </Badge>
+                          </TableCell>
                           <TableCell>{t.password}</TableCell>
                           <TableCell className="text-right space-x-2">
                              <Button variant="outline" size="sm" onClick={() => setEditingTarget({ type: 'teacher', data: t })}>
@@ -459,7 +481,7 @@ export default function ManagementPage() {
                         <SelectValue placeholder="Select a teacher" />
                       </SelectTrigger>
                       <SelectContent>
-                        {teachers.map(t => <SelectItem key={t.id} value={t.id!}>{t.name}</SelectItem>)}
+                        {teachers.filter(t => t.role !== 'admin').map(t => <SelectItem key={t.id} value={t.id!}>{t.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
@@ -561,6 +583,18 @@ export default function ManagementPage() {
                     <Label htmlFor="editTeacherPassword">Password</Label>
                     <Input id="editTeacherPassword" name="editTeacherPassword" type="text" defaultValue={editingTarget.data.password} required />
                   </div>
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="editTeacherRole">Role</Label>
+                    <Select name="editTeacherRole" required defaultValue={(editingTarget.data as Teacher).role || 'teacher'}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="teacher">Teacher</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
               </div>
             )}
 
@@ -589,7 +623,7 @@ export default function ManagementPage() {
                                 <SelectValue placeholder="Select a teacher" />
                             </SelectTrigger>
                             <SelectContent>
-                                {teachers.map(t => <SelectItem key={t.id} value={t.id!}>{t.name}</SelectItem>)}
+                                {teachers.filter(t => t.role !== 'admin').map(t => <SelectItem key={t.id} value={t.id!}>{t.name}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </div>
@@ -609,7 +643,7 @@ export default function ManagementPage() {
                                 <SelectValue placeholder="Select a teacher" />
                             </SelectTrigger>
                             <SelectContent>
-                                {teachers.map(t => <SelectItem key={t.id} value={t.id!}>{t.name}</SelectItem>)}
+                                {teachers.filter(t => t.role !== 'admin').map(t => <SelectItem key={t.id} value={t.id!}>{t.name}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </div>

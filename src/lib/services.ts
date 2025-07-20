@@ -5,6 +5,7 @@ export interface Teacher {
   name: string;
   email: string;
   password?: string; // Should be handled securely in a real app
+  role?: 'teacher' | 'admin';
 }
 
 export interface Student {
@@ -26,8 +27,8 @@ export interface Course {
 
 // Default Mock Database
 const defaultTeachers: Teacher[] = [
-  { id: 't1', name: 'Jane Doe', email: 'jane.doe@school.com', password: 'password123' },
-  { id: 't2', name: 'John Smith', email: 'john.smith@school.com', password: 'password123' },
+  { id: 't1', name: 'Jane Doe', email: 'jane.doe@school.com', password: 'password123', role: 'teacher' },
+  { id: 't2', name: 'John Smith', email: 'john.smith@school.com', password: 'password123', role: 'teacher' },
 ];
 
 const defaultStudents: Student[] = [

@@ -4,7 +4,7 @@ const SESSION_KEY = "sahayak-session";
 
 type Session = {
     user: Student | Omit<Teacher, 'password'>;
-    role: 'student' | 'teacher';
+    role: 'student' | 'teacher' | 'admin';
 };
 
 // This function can only be called on the client side
@@ -43,7 +43,7 @@ export const loginTeacher = async (email: string, password: string): Promise<Tea
     if (teacher && teacher.password === password) {
         // Don't store password in session
         const { password: _, ...teacherData } = teacher;
-        const sessionData: Session = { user: teacherData, role: 'teacher' };
+        const sessionData: Session = { user: teacherData, role: teacher.role || 'teacher' };
         if (typeof window !== 'undefined') {
             localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
         }
