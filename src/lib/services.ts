@@ -1,3 +1,4 @@
+'use server';
 // Mock data services. No database connection needed.
 
 export interface Teacher {
@@ -109,21 +110,31 @@ export const getTeacherById = async (id: string): Promise<Teacher | null> => {
 
 export const updateTeacher = async (id: string, updates: Partial<Teacher>): Promise<Teacher | null> => {
   await delay(300);
-  const teacherIndex = mockTeachers.findIndex(t => t.id === id);
+  const teachers = getFromStorage('mock_teachers', defaultTeachers);
+  const teacherIndex = teachers.findIndex(t => t.id === id);
   if (teacherIndex === -1) return null;
-  mockTeachers[teacherIndex] = { ...mockTeachers[teacherIndex], ...updates };
-  saveToStorage('mock_teachers', mockTeachers);
-  return mockTeachers[teacherIndex];
+  const originalPassword = teachers[teacherIndex].password;
+  teachers[teacherIndex] = { ...teachers[teacherIndex], ...updates };
+  if (!updates.password) {
+    teachers[teacherIndex].password = originalPassword;
+  }
+  saveToStorage('mock_teachers', teachers);
+  return teachers[teacherIndex];
 }
 
 export const deleteTeacher = async (id: string): Promise<void> => {
   await delay(300);
-  mockTeachers = mockTeachers.filter(t => t.id !== id);
-  mockStudents = mockStudents.map(s => s.teacherId === id ? { ...s, teacherId: '' } : s);
-  mockCourses = mockCourses.map(c => c.teacherId === id ? { ...c, teacherId: '' } : c);
-  saveToStorage('mock_teachers', mockTeachers);
-  saveToStorage('mock_students', mockStudents);
-  saveToStorage('mock_courses', mockCourses);
+  let teachers = getFromStorage('mock_teachers', defaultTeachers);
+  let students = getFromStorage('mock_students', defaultStudents);
+  let courses = getFromStorage('mock_courses', defaultCourses);
+  
+  teachers = teachers.filter(t => t.id !== id);
+  students = students.map(s => s.teacherId === id ? { ...s, teacherId: '' } : s);
+  courses = courses.map(c => c.teacherId === id ? { ...c, teacherId: '' } : c);
+  
+  saveToStorage('mock_teachers', teachers);
+  saveToStorage('mock_students', students);
+  saveToStorage('mock_courses', courses);
 };
 
 export const getTeacherByEmail = async (email: string): Promise<Teacher | null> => {
@@ -135,8 +146,9 @@ export const getTeacherByEmail = async (email: string): Promise<Teacher | null> 
 export const addStudent = async (student: Omit<Student, 'id'>): Promise<Student> => {
   await delay(300);
   const newStudent: Student = { ...student, id: generateId('s') };
-  mockStudents.push(newStudent);
-  saveToStorage('mock_students', mockStudents);
+  const students = getFromStorage('mock_students', defaultStudents);
+  students.push(newStudent);
+  saveToStorage('mock_students', students);
   return newStudent;
 };
 
@@ -162,25 +174,31 @@ export const getStudentsForTeacher = async (teacherId: string): Promise<Student[
 
 export const updateStudent = async (id: string, updates: Partial<Student>): Promise<Student | null> => {
   await delay(300);
-  const studentIndex = mockStudents.findIndex(s => s.id === id);
+  const students = getFromStorage('mock_students', defaultStudents);
+  const studentIndex = students.findIndex(s => s.id === id);
   if (studentIndex === -1) return null;
-  mockStudents[studentIndex] = { ...mockStudents[studentIndex], ...updates };
-  saveToStorage('mock_students', mockStudents);
-  return mockStudents[studentIndex];
+  const originalPassword = students[studentIndex].password;
+  students[studentIndex] = { ...students[studentIndex], ...updates };
+  if (!updates.password) {
+    students[studentIndex].password = originalPassword;
+  }
+  saveToStorage('mock_students', students);
+  return students[studentIndex];
 }
 
 export const deleteStudent = async (id: string): Promise<void> => {
   await delay(300);
-  mockStudents = mockStudents.filter(s => s.id !== id);
-  saveToStorage('mock_students', mockStudents);
+  const students = getFromStorage('mock_students', defaultStudents);
+  saveToStorage('mock_students', students.filter(s => s.id !== id));
 };
 
 // Course Services
 export const addCourse = async (course: Omit<Course, 'id'>): Promise<Course> => {
   await delay(300);
   const newCourse: Course = { ...course, id: generateId('c') };
-  mockCourses.push(newCourse);
-  saveToStorage('mock_courses', mockCourses);
+  const courses = getFromStorage('mock_courses', defaultCourses);
+  courses.push(newCourse);
+  saveToStorage('mock_courses', courses);
   return newCourse;
 };
 
@@ -196,24 +214,23 @@ export const getCoursesForTeacher = async (teacherId: string): Promise<Course[]>
 
 export const getCoursesForStudent = async (studentId: string): Promise<Course[]> => {
     await delay(200);
-    const student = mockStudents.find(s => s.id === studentId);
+    const student = getFromStorage('mock_students', defaultStudents).find(s => s.id === studentId);
     if (!student) return [];
     return getFromStorage('mock_courses', defaultCourses).filter(c => c.teacherId === student.teacherId);
 }
 
 export const updateCourse = async (id: string, updates: Partial<Course>): Promise<Course | null> => {
   await delay(300);
-  const courseIndex = mockCourses.findIndex(c => c.id === id);
+  const courses = getFromStorage('mock_courses', defaultCourses);
+  const courseIndex = courses.findIndex(c => c.id === id);
   if (courseIndex === -1) return null;
-  mockCourses[courseIndex] = { ...mockCourses[courseIndex], ...updates };
-  saveToStorage('mock_courses', mockCourses);
-  return mockCourses[courseIndex];
+  courses[courseIndex] = { ...courses[courseIndex], ...updates };
+  saveToStorage('mock_courses', courses);
+  return courses[courseIndex];
 }
 
 export const deleteCourse = async (id: string): Promise<void> => {
   await delay(300);
-  mockCourses = mockCourses.filter(c => c.id !== id);
-  saveToStorage('mock_courses', mockCourses);
+  const courses = getFromStorage('mock_courses', defaultCourses);
+  saveToStorage('mock_courses', courses.filter(c => c.id !== id));
 };
-
-export const isFirebaseConfigured = true;

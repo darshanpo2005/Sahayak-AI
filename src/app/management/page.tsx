@@ -84,7 +84,7 @@ export default function ManagementPage() {
     const name = (form.elements.namedItem("teacherName") as HTMLInputElement).value;
     const email = (form.elements.namedItem("teacherEmail") as HTMLInputElement).value;
     const password = (form.elements.namedItem("teacherPassword") as HTMLInputElement).value;
-    const role = (form.elements.namedItem("teacherRole") as HTMLInputElement).value as 'teacher' | 'admin';
+    const role = (form.elements.namedItem("teacherRole") as HTMLSelectElement).value as 'teacher' | 'admin';
 
     try {
       await addTeacher({ name, email, password, role });
@@ -113,7 +113,7 @@ export default function ManagementPage() {
     const email = (form.elements.namedItem("studentEmail") as HTMLInputElement).value;
     const password = (form.elements.namedItem("studentPassword") as HTMLInputElement).value;
     const grade = (form.elements.namedItem("studentGrade") as HTMLInputElement).value;
-    const teacherId = (form.elements.namedItem("studentTeacher") as HTMLInputElement).value;
+    const teacherId = (form.elements.namedItem("studentTeacher") as HTMLSelectElement).value;
 
     try {
       await addStudent({ name, email, password, grade, teacherId });
@@ -142,7 +142,7 @@ export default function ManagementPage() {
     const title = (form.elements.namedItem("courseTitle") as HTMLInputElement).value;
     const description = (form.elements.namedItem("courseDesc") as HTMLTextAreaElement).value;
     const modulesText = (form.elements.namedItem("courseModules") as HTMLTextAreaElement).value;
-    const teacherId = (form.elements.namedItem("courseTeacher") as HTMLInputElement).value;
+    const teacherId = (form.elements.namedItem("courseTeacher") as HTMLSelectElement).value;
     
     const modules = modulesText.split('\n').filter(m => m.trim() !== '');
 
@@ -205,19 +205,23 @@ export default function ManagementPage() {
                 ...editingTarget.data,
                 name: (form.elements.namedItem("editTeacherName") as HTMLInputElement).value,
                 email: (form.elements.namedItem("editTeacherEmail") as HTMLInputElement).value,
-                password: (form.elements.namedItem("editTeacherPassword") as HTMLInputElement).value,
                 role: (form.elements.namedItem("editTeacherRole") as HTMLSelectElement).value as 'teacher' | 'admin',
             };
+            if ((form.elements.namedItem("editTeacherPassword") as HTMLInputElement).value) {
+                updatedData.password = (form.elements.namedItem("editTeacherPassword") as HTMLInputElement).value;
+            }
             await updateTeacher(updatedData.id, updatedData);
         } else if (editingTarget.type === 'student') {
             const updatedData: Student = {
                  ...editingTarget.data,
                 name: (form.elements.namedItem("editStudentName") as HTMLInputElement).value,
                 email: (form.elements.namedItem("editStudentEmail") as HTMLInputElement).value,
-                password: (form.elements.namedItem("editStudentPassword") as HTMLInputElement).value,
                 grade: (form.elements.namedItem("editStudentGrade") as HTMLInputElement).value,
                 teacherId: (form.elements.namedItem("editStudentTeacher") as HTMLSelectElement).value,
             };
+            if ((form.elements.namedItem("editStudentPassword") as HTMLInputElement).value) {
+                updatedData.password = (form.elements.namedItem("editStudentPassword") as HTMLInputElement).value;
+            }
             await updateStudent(updatedData.id, updatedData);
         } else if (editingTarget.type === 'course') {
            const modulesText = (form.elements.namedItem("editCourseModules") as HTMLTextAreaElement).value;
@@ -389,12 +393,11 @@ export default function ManagementPage() {
                         <TableHead>Name</TableHead>
                         <TableHead>Email</TableHead>
                         <TableHead>Role</TableHead>
-                        <TableHead>Password</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {isLoading && <TableRow><TableCell colSpan={5} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
+                      {isLoading && <TableRow><TableCell colSpan={4} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
                       {!isLoading && teachers.map((t) => (
                         <TableRow key={t.id}>
                           <TableCell className="font-medium">{t.name}</TableCell>
@@ -405,7 +408,6 @@ export default function ManagementPage() {
                                 {t.role?.charAt(0).toUpperCase() + t.role?.slice(1) || 'Teacher'}
                             </Badge>
                           </TableCell>
-                          <TableCell>{t.password}</TableCell>
                           <TableCell className="text-right space-x-2">
                              <Button variant="outline" size="sm" onClick={() => setEditingTarget({ type: 'teacher', data: t })}>
                                 <Edit className="h-4 w-4" />
@@ -430,19 +432,17 @@ export default function ManagementPage() {
                       <TableRow>
                         <TableHead>Name</TableHead>
                         <TableHead>Email</TableHead>
-                        <TableHead>Password</TableHead>
                         <TableHead>Grade</TableHead>
                         <TableHead>Assigned Teacher</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                       {isLoading && <TableRow><TableCell colSpan={6} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
+                       {isLoading && <TableRow><TableCell colSpan={5} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
                       {!isLoading && students.map((s) => (
                         <TableRow key={s.id}>
                           <TableCell className="font-medium">{s.name}</TableCell>
                           <TableCell>{s.email}</TableCell>
-                          <TableCell>{s.password}</TableCell>
                           <TableCell>{s.grade}</TableCell>
                           <TableCell>{teachers.find(t => t.id === s.teacherId)?.name || 'N/A'}</TableCell>
                           <TableCell className="text-right space-x-2">
@@ -491,7 +491,7 @@ export default function ManagementPage() {
                   </div>
                   <div>
                     <Label htmlFor="courseModules">Modules (one per line)</Label>
-                    <Textarea id="courseModules" name="courseModules" placeholder="Module 1: Basic Equations&#10;Module 2: Functions" rows={4} required />
+                    <Textarea id="courseModules" name="courseModules" placeholder="Module 1: Basic Equations\nModule 2: Functions" rows={4} required />
                   </div>
                   <Button type="submit" className="w-full" disabled={isCreatingCourse}>
                      {isCreatingCourse ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
@@ -580,8 +580,8 @@ export default function ManagementPage() {
                     <Input id="editTeacherEmail" name="editTeacherEmail" type="email" defaultValue={editingTarget.data.email} required />
                   </div>
                    <div className="grid gap-1.5">
-                    <Label htmlFor="editTeacherPassword">Password</Label>
-                    <Input id="editTeacherPassword" name="editTeacherPassword" type="text" defaultValue={editingTarget.data.password} required />
+                    <Label htmlFor="editTeacherPassword">New Password</Label>
+                    <Input id="editTeacherPassword" name="editTeacherPassword" type="password" placeholder="Leave blank to keep current password" />
                   </div>
                   <div className="grid gap-1.5">
                     <Label htmlFor="editTeacherRole">Role</Label>
@@ -609,8 +609,8 @@ export default function ManagementPage() {
                         <Input id="editStudentEmail" name="editStudentEmail" type="email" defaultValue={editingTarget.data.email} required />
                     </div>
                     <div className="grid gap-1.5">
-                        <Label htmlFor="editStudentPassword">Password</Label>
-                        <Input id="editStudentPassword" name="editStudentPassword" type="text" defaultValue={editingTarget.data.password} required />
+                        <Label htmlFor="editStudentPassword">New Password</Label>
+                        <Input id="editStudentPassword" name="editStudentPassword" type="password" placeholder="Leave blank to keep current password" />
                     </div>
                     <div className="grid gap-1.5">
                         <Label htmlFor="editStudentGrade">Grade</Label>
