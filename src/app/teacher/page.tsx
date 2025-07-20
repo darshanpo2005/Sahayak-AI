@@ -18,11 +18,19 @@ import { Lightbulb, HelpCircle, BarChart3, Bot, Sparkles, Loader2, CalendarCheck
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { getStudents, Student, Teacher, getCourses, Course, storeQuiz } from "@/lib/services";
+import { getStudents, Student, Teacher, getCourses, Course } from "@/lib/services";
 import { getSession } from "@/lib/authService";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+export type StoredQuiz = GenerateQuizQuestionsOutput & { courseId: string };
+
+export const storeQuiz = (courseId: string, quizData: GenerateQuizQuestionsOutput) => {
+  if (typeof window === 'undefined') return;
+  const quizKey = `quiz_${courseId}`;
+  const storedQuiz: StoredQuiz = { ...quizData, courseId };
+  localStorage.setItem(quizKey, JSON.stringify(storedQuiz));
+};
 
 export default function TeacherPage() {
   const { toast } = useToast();

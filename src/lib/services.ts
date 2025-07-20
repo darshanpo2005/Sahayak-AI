@@ -1,7 +1,5 @@
 'use server';
 
-import type { GenerateQuizQuestionsOutput } from "./actions";
-
 // Mock data services. No database connection needed.
 
 export interface Teacher {
@@ -28,8 +26,6 @@ export interface Course {
   modules: string[];
   teacherId: string;
 }
-
-export type StoredQuiz = GenerateQuizQuestionsOutput & { courseId: string };
 
 // Default Mock Database
 const defaultTeachers: Teacher[] = [
@@ -90,7 +86,7 @@ const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 const generateId = (prefix: string) => `${prefix}${Date.now()}${Math.random().toString(36).substring(2, 5)}`;
 
 // Teacher Services
-export const addTeacher = async (teacher: Omit<Teacher, 'id'>): Promise<Teacher> => {
+export async function addTeacher(teacher: Omit<Teacher, 'id'>): Promise<Teacher> {
   await delay(300);
   const newTeacher: Teacher = { ...teacher, id: generateId('t') };
   mockTeachers.push(newTeacher);
@@ -98,22 +94,22 @@ export const addTeacher = async (teacher: Omit<Teacher, 'id'>): Promise<Teacher>
   return newTeacher;
 };
 
-export const getTeachers = async (): Promise<Teacher[]> => {
+export async function getTeachers(): Promise<Teacher[]> {
   await delay(300);
   return [...getFromStorage('mock_teachers', defaultTeachers)];
 };
 
-export const getTeacherByName = async (name: string): Promise<Teacher | null> => {
+export async function getTeacherByName(name: string): Promise<Teacher | null> {
     await delay(100);
     return getFromStorage('mock_teachers', defaultTeachers).find(t => t.name === name) || null;
 }
 
-export const getTeacherById = async (id: string): Promise<Teacher | null> => {
+export async function getTeacherById(id: string): Promise<Teacher | null> {
     await delay(100);
     return getFromStorage('mock_teachers', defaultTeachers).find(t => t.id === id) || null;
 }
 
-export const updateTeacher = async (id: string, updates: Partial<Teacher>): Promise<Teacher | null> => {
+export async function updateTeacher(id: string, updates: Partial<Teacher>): Promise<Teacher | null> {
   await delay(300);
   const teachers = getFromStorage('mock_teachers', defaultTeachers);
   const teacherIndex = teachers.findIndex(t => t.id === id);
@@ -127,7 +123,7 @@ export const updateTeacher = async (id: string, updates: Partial<Teacher>): Prom
   return teachers[teacherIndex];
 }
 
-export const updateTeacherPassword = async (teacherId: string, currentPassword: string, newPassword: string):Promise<boolean> => {
+export async function updateTeacherPassword(teacherId: string, currentPassword: string, newPassword: string):Promise<boolean> {
   await delay(300);
   const teachers = getFromStorage('mock_teachers', defaultTeachers);
   const teacherIndex = teachers.findIndex(t => t.id === teacherId);
@@ -144,7 +140,7 @@ export const updateTeacherPassword = async (teacherId: string, currentPassword: 
 }
 
 
-export const deleteTeacher = async (id: string): Promise<void> => {
+export async function deleteTeacher(id: string): Promise<void> {
   await delay(300);
   let teachers = getFromStorage('mock_teachers', defaultTeachers);
   let students = getFromStorage('mock_students', defaultStudents);
@@ -159,13 +155,13 @@ export const deleteTeacher = async (id: string): Promise<void> => {
   saveToStorage('mock_courses', courses);
 };
 
-export const getTeacherByEmail = async (email: string): Promise<Teacher | null> => {
+export async function getTeacherByEmail(email: string): Promise<Teacher | null> {
   await delay(100);
   return getFromStorage('mock_teachers', defaultTeachers).find(t => t.email.toLowerCase() === email.toLowerCase()) || null;
 }
 
 // Student Services
-export const addStudent = async (student: Omit<Student, 'id'>): Promise<Student> => {
+export async function addStudent(student: Omit<Student, 'id'>): Promise<Student> {
   await delay(300);
   const newStudent: Student = { ...student, id: generateId('s') };
   const students = getFromStorage('mock_students', defaultStudents);
@@ -174,27 +170,27 @@ export const addStudent = async (student: Omit<Student, 'id'>): Promise<Student>
   return newStudent;
 };
 
-export const getStudents = async (): Promise<Student[]> => {
+export async function getStudents(): Promise<Student[]> {
   await delay(300);
   return [...getFromStorage('mock_students', defaultStudents)];
 };
 
-export const getStudentByName = async (name: string): Promise<Student | null> => {
+export async function getStudentByName(name: string): Promise<Student | null> {
     await delay(100);
     return getFromStorage('mock_students', defaultStudents).find(s => s.name === name) || null;
 }
 
-export const getStudentByEmail = async (email: string): Promise<Student | null> => {
+export async function getStudentByEmail(email: string): Promise<Student | null> {
   await delay(100);
   return getFromStorage('mock_students', defaultStudents).find(s => s.email.toLowerCase() === email.toLowerCase()) || null;
 }
 
-export const getStudentsForTeacher = async (teacherId: string): Promise<Student[]> => {
+export async function getStudentsForTeacher(teacherId: string): Promise<Student[]> {
     await delay(200);
     return getFromStorage('mock_students', defaultStudents).filter(s => s.teacherId === teacherId);
 }
 
-export const updateStudent = async (id: string, updates: Partial<Student>): Promise<Student | null> => {
+export async function updateStudent(id: string, updates: Partial<Student>): Promise<Student | null> {
   await delay(300);
   const students = getFromStorage('mock_students', defaultStudents);
   const studentIndex = students.findIndex(s => s.id === id);
@@ -208,7 +204,7 @@ export const updateStudent = async (id: string, updates: Partial<Student>): Prom
   return students[studentIndex];
 }
 
-export const updateStudentPassword = async (studentId: string, currentPassword: string, newPassword: string):Promise<boolean> => {
+export async function updateStudentPassword(studentId: string, currentPassword: string, newPassword: string):Promise<boolean> {
   await delay(300);
   const students = getFromStorage('mock_students', defaultStudents);
   const studentIndex = students.findIndex(s => s.id === studentId);
@@ -224,14 +220,14 @@ export const updateStudentPassword = async (studentId: string, currentPassword: 
   return true;
 }
 
-export const deleteStudent = async (id: string): Promise<void> => {
+export async function deleteStudent(id: string): Promise<void> {
   await delay(300);
   const students = getFromStorage('mock_students', defaultStudents);
   saveToStorage('mock_students', students.filter(s => s.id !== id));
 };
 
 // Course Services
-export const addCourse = async (course: Omit<Course, 'id'>): Promise<Course> => {
+export async function addCourse(course: Omit<Course, 'id'>): Promise<Course> {
   await delay(300);
   const newCourse: Course = { ...course, id: generateId('c') };
   const courses = getFromStorage('mock_courses', defaultCourses);
@@ -240,24 +236,24 @@ export const addCourse = async (course: Omit<Course, 'id'>): Promise<Course> => 
   return newCourse;
 };
 
-export const getCourses = async (): Promise<Course[]> => {
+export async function getCourses(): Promise<Course[]> {
   await delay(300);
   return [...getFromStorage('mock_courses', defaultCourses)];
 };
 
-export const getCoursesForTeacher = async (teacherId: string): Promise<Course[]> => {
+export async function getCoursesForTeacher(teacherId: string): Promise<Course[]> {
     await delay(200);
     return getFromStorage('mock_courses', defaultCourses).filter(c => c.teacherId === teacherId);
 }
 
-export const getCoursesForStudent = async (studentId: string): Promise<Course[]> => {
+export async function getCoursesForStudent(studentId: string): Promise<Course[]> {
     await delay(200);
     const student = getFromStorage('mock_students', defaultStudents).find(s => s.id === studentId);
     if (!student) return [];
     return getFromStorage('mock_courses', defaultCourses).filter(c => c.teacherId === student.teacherId);
 }
 
-export const updateCourse = async (id: string, updates: Partial<Course>): Promise<Course | null> => {
+export async function updateCourse(id: string, updates: Partial<Course>): Promise<Course | null> {
   await delay(300);
   const courses = getFromStorage('mock_courses', defaultCourses);
   const courseIndex = courses.findIndex(c => c.id === id);
@@ -267,23 +263,8 @@ export const updateCourse = async (id: string, updates: Partial<Course>): Promis
   return courses[courseIndex];
 }
 
-export const deleteCourse = async (id: string): Promise<void> => {
+export async function deleteCourse(id: string): Promise<void> {
   await delay(300);
   const courses = getFromStorage('mock_courses', defaultCourses);
   saveToStorage('mock_courses', courses.filter(c => c.id !== id));
-};
-
-// Quiz Services
-export const storeQuiz = (courseId: string, quizData: GenerateQuizQuestionsOutput) => {
-  if (typeof window === 'undefined') return;
-  const quizKey = `quiz_${courseId}`;
-  const storedQuiz: StoredQuiz = { ...quizData, courseId };
-  localStorage.setItem(quizKey, JSON.stringify(storedQuiz));
-};
-
-export const getStoredQuiz = (courseId: string): StoredQuiz | null => {
-  if (typeof window === 'undefined') return null;
-  const quizKey = `quiz_${courseId}`;
-  const quizData = localStorage.getItem(quizKey);
-  return quizData ? JSON.parse(quizData) : null;
 };

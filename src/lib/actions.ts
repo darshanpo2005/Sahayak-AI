@@ -116,6 +116,5 @@ export async function getFlashcards(input: GenerateFlashcardsInput): Promise<Fla
   }
 }
 
-
 // Export types for use in client components
 export type { GenerateLessonPlanAssistanceOutput, GenerateQuizQuestionsOutput, TutorStudentOutput, GenerateCertificateOutput, GenerateFlashcardsOutput };

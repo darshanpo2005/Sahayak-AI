@@ -8,9 +8,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { getCourses, Course, getStoredQuiz, StoredQuiz } from "@/lib/services";
+import { getCourses, Course } from "@/lib/services";
+import { GenerateQuizQuestionsOutput } from "@/lib/actions";
 import { Loader2, HelpCircle, CheckCircle, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+// Client-side Quiz Storage
+export type StoredQuiz = GenerateQuizQuestionsOutput & { courseId: string };
+
+export const getStoredQuiz = (courseId: string): StoredQuiz | null => {
+  if (typeof window === 'undefined') return null;
+  const quizKey = `quiz_${courseId}`;
+  const quizData = localStorage.getItem(quizKey);
+  return quizData ? JSON.parse(quizData) : null;
+};
+
 
 type AnswerState = Record<number, string>;
 type ResultState = {
