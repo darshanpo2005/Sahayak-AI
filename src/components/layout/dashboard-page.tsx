@@ -182,39 +182,43 @@ export function DashboardPage({
               <h1 className="text-xl font-bold tracking-tight">{title}</h1>
             </div>
             <div className="flex items-center gap-2">
-            {role !== 'Management' && (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                         <Avatar className="h-8 w-8">
-                        <AvatarImage src={`https://placehold.co/100x100.png?text=${session?.user?.name?.charAt(0)}`} alt="User" data-ai-hint="user avatar" />
-                        <AvatarFallback>{session?.user?.name?.charAt(0) || role.charAt(0)}</AvatarFallback>
+                        <AvatarImage src={`https://placehold.co/100x100.png?text=${session?.user?.name?.charAt(0) ?? 'A'}`} alt="User" data-ai-hint="user avatar" />
+                        <AvatarFallback>{session?.user?.name?.charAt(0) ?? role.charAt(0)}</AvatarFallback>
                         </Avatar>
                     </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-56" align="end" forceMount>
                     <DropdownMenuLabel className="font-normal">
+                      {session?.user && (
                         <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{session?.user?.name || `${role} User`}</p>
-                        <p className="text-xs leading-none text-muted-foreground">
-                            {session?.user?.email || `${role.toLowerCase()}@sahayak.com`}
-                        </p>
+                          <p className="text-sm font-medium leading-none">{session.user.name}</p>
+                          <p className="text-xs leading-none text-muted-foreground">
+                            {session.user.email}
+                          </p>
                         </div>
+                      )}
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                     <DropdownMenuItem asChild>
-                       <Link href={getProfileLink()}><User className="mr-2 h-4 w-4" />Profile</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                       <Link href={getSettingsLink()}><Settings className="mr-2 h-4 w-4" />Settings</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
+                     {role !== 'Management' && (
+                       <DropdownMenuItem asChild>
+                         <Link href={getProfileLink()}><User className="mr-2 h-4 w-4" />Profile</Link>
+                       </DropdownMenuItem>
+                     )}
+                     {role !== 'Management' && (
+                        <DropdownMenuItem asChild>
+                           <Link href={getSettingsLink()}><Settings className="mr-2 h-4 w-4" />Settings</Link>
+                        </DropdownMenuItem>
+                     )}
+                    {role !== 'Management' && <DropdownMenuSeparator />}
                     <DropdownMenuItem onClick={handleLogout}>
                        <LogOut className="mr-2 h-4 w-4" />Logout
                     </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
-            )}
             </div>
         </header>
         <main className="flex-1 p-4 sm:p-6 lg:p-8 animate-in fade-in-25 duration-300">
