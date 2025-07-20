@@ -20,8 +20,8 @@ import { getSession } from "@/lib/authService";
 import Link from "next/link";
 
 type ChatMessage = {
-  author: "user" | "bot";
-  message: string;
+  role: "user" | "model";
+  content: string;
 };
 
 export default function StudentPage() {
@@ -81,7 +81,7 @@ export default function StudentPage() {
     e.preventDefault();
     if (!question.trim()) return;
 
-    const newHistory: ChatMessage[] = [...chatHistory, { author: "user", message: question }];
+    const newHistory: ChatMessage[] = [...chatHistory, { role: "user", content: question }];
     setChatHistory(newHistory);
     const currentQuestion = question;
     setQuestion("");
@@ -90,13 +90,13 @@ export default function StudentPage() {
     const result = await getTutorResponse({
       question: currentQuestion,
       topic: activeCourseTopic,
-      history: chatHistory.map(chat => ({ role: chat.author === 'user' ? 'user' : 'model', content: chat.message })),
+      history: chatHistory,
     });
 
     if (result.success) {
-      setChatHistory([...newHistory, { author: "bot", message: result.data.answer }]);
+      setChatHistory([...newHistory, { role: "model", content: result.data.answer }]);
     } else {
-      setChatHistory([...newHistory, { author: "bot", message: `Sorry, I encountered an error: ${result.error}` }]);
+      setChatHistory([...newHistory, { role: "model", content: `Sorry, I encountered an error: ${result.error}` }]);
     }
     setIsAnswering(false);
   };
@@ -262,14 +262,14 @@ export default function StudentPage() {
                 <ScrollArea className="h-full pr-4">
                   <div className="space-y-4">
                   {chatHistory.map((chat, index) => (
-                    <div key={index} className={`flex items-start gap-3 ${chat.author === 'user' ? 'justify-end' : ''}`}>
-                      {chat.author === 'bot' && (
+                    <div key={index} className={`flex items-start gap-3 ${chat.role === 'user' ? 'justify-end' : ''}`}>
+                      {chat.role === 'model' && (
                         <Avatar>
                           <AvatarFallback><Bot /></AvatarFallback>
                         </Avatar>
                       )}
-                       <div className={`rounded-lg px-4 py-2 max-w-[85%] whitespace-pre-wrap font-sans text-sm ${chat.author === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                        <p>{chat.message}</p>
+                       <div className={`rounded-lg px-4 py-2 max-w-[85%] whitespace-pre-wrap font-sans text-sm ${chat.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                        <p>{chat.content}</p>
                       </div>
                     </div>
                   ))}

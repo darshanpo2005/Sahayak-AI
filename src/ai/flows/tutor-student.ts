@@ -9,6 +9,8 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {generate} from 'genkit/generate';
+import {Message, Role} from 'genkit/generate';
 import {z} from 'genkit';
 
 const TutorStudentInputSchema = z.object({
@@ -31,21 +33,6 @@ export async function tutorStudent(input: TutorStudentInput): Promise<TutorStude
   return tutorStudentFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'tutorStudentPrompt',
-  input: {schema: TutorStudentInputSchema},
-  output: {schema: TutorStudentOutputSchema},
-  prompt: `You are Sahayak AI, an expert tutor for students. Your goal is to help students understand their course material.
-
-  A student has a question about the topic: {{topic}}.
-
-  Here is their question:
-  "{{question}}"
-
-  Please provide a clear, helpful, and encouraging answer to help them learn. If the question is outside the scope of the topic, gently guide them back to the subject.
-  `,
-});
-
 const tutorStudentFlow = ai.defineFlow(
   {
     name: 'tutorStudentFlow',
@@ -53,9 +40,26 @@ const tutorStudentFlow = ai.defineFlow(
     outputSchema: TutorStudentOutputSchema,
   },
   async (input) => {
-    // Note: The history parameter is included for future enhancement to allow for conversation memory.
-    // The current implementation uses a stateless prompt for simplicity.
-    const {output} = await prompt(input);
-    return output!;
+    const systemPrompt = `You are Sahayak AI, an expert tutor for students. Your goal is to help students understand their course material on the topic of: ${input.topic}.
+    
+    Keep your answers helpful, clear, and encouraging. If a question is outside the scope of the topic, gently guide the student back to the subject.`;
+
+    const history: Message[] = (input.history || []).map(msg => ({
+      role: msg.role as Role,
+      content: [{ text: msg.content }],
+    }));
+
+    const { output } = await generate({
+      model: 'googleai/gemini-2.0-flash',
+      prompt: input.question,
+      history,
+      config: {
+        systemPrompt,
+      },
+    });
+
+    return {
+      answer: output?.text ?? "I'm sorry, I couldn't come up with a response.",
+    };
   }
 );
