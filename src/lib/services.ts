@@ -1,4 +1,7 @@
 'use server';
+
+import type { GenerateQuizQuestionsOutput } from "./actions";
+
 // Mock data services. No database connection needed.
 
 export interface Teacher {
@@ -25,6 +28,8 @@ export interface Course {
   modules: string[];
   teacherId: string;
 }
+
+export type StoredQuiz = GenerateQuizQuestionsOutput & { courseId: string };
 
 // Default Mock Database
 const defaultTeachers: Teacher[] = [
@@ -266,4 +271,19 @@ export const deleteCourse = async (id: string): Promise<void> => {
   await delay(300);
   const courses = getFromStorage('mock_courses', defaultCourses);
   saveToStorage('mock_courses', courses.filter(c => c.id !== id));
+};
+
+// Quiz Services
+export const storeQuiz = (courseId: string, quizData: GenerateQuizQuestionsOutput) => {
+  if (typeof window === 'undefined') return;
+  const quizKey = `quiz_${courseId}`;
+  const storedQuiz: StoredQuiz = { ...quizData, courseId };
+  localStorage.setItem(quizKey, JSON.stringify(storedQuiz));
+};
+
+export const getStoredQuiz = (courseId: string): StoredQuiz | null => {
+  if (typeof window === 'undefined') return null;
+  const quizKey = `quiz_${courseId}`;
+  const quizData = localStorage.getItem(quizKey);
+  return quizData ? JSON.parse(quizData) : null;
 };

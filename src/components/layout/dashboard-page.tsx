@@ -56,6 +56,7 @@ type Session = {
 const studentNavItems = [
   { href: "/student", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/student/flashcards", icon: Copy, label: "Flashcards" },
+  { href: "/student/quiz", icon: HelpCircle, label: "Quizzes" },
 ];
 
 const teacherNavItems = [
