@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Book, MessageSquare, Send, Bot, Loader2, CalendarCheck, Film, Award } from "lucide-react";
+import { Book, MessageSquare, Send, Bot, Loader2, CalendarCheck, Film, Award, Copy } from "lucide-react";
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -17,6 +17,7 @@ import { getTutorResponse, getCertificate } from "@/lib/actions";
 import { getCourses, Course, Student } from "@/lib/services";
 import { useToast } from "@/hooks/use-toast";
 import { getSession } from "@/lib/authService";
+import Link from "next/link";
 
 type ChatMessage = {
   author: "user" | "bot";
@@ -134,8 +135,9 @@ export default function StudentPage() {
   return (
     <DashboardPage title="Student Dashboard" role="Student">
       <Tabs defaultValue="courses">
-        <TabsList className="mb-6 grid grid-cols-1 sm:grid-cols-3 w-full sm:w-auto">
+        <TabsList className="mb-6 grid grid-cols-2 sm:grid-cols-4 w-full sm:w-auto">
           <TabsTrigger value="courses"><Book className="mr-2 h-4 w-4" />My Courses</TabsTrigger>
+          <TabsTrigger value="flashcards"><Copy className="mr-2 h-4 w-4" />Flashcards</TabsTrigger>
           <TabsTrigger value="attendance"><CalendarCheck className="mr-2 h-4 w-4" />Attendance</TabsTrigger>
           <TabsTrigger value="qna"><MessageSquare className="mr-2 h-4 w-4" />AI Tutor</TabsTrigger>
         </TabsList>
@@ -198,6 +200,23 @@ export default function StudentPage() {
                   ))}
                 </Accordion>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="flashcards">
+          <Card>
+            <CardHeader>
+              <CardTitle>AI Flashcard Generator</CardTitle>
+              <CardDescription>
+                Create flashcards for any topic to help you study.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center justify-center text-center h-64">
+                <p className="mb-4 text-muted-foreground">This powerful study tool is just one click away.</p>
+                <Button asChild>
+                  <Link href="/student/flashcards">Go to Flashcard Generator</Link>
+                </Button>
             </CardContent>
           </Card>
         </TabsContent>
