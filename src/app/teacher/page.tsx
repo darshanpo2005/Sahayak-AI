@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { getLessonPlan, getQuiz } from "@/lib/actions";
@@ -22,6 +21,7 @@ import { getStudents, Student, Teacher, getCourses, Course, QuizResult, getQuizR
 import { getSession } from "@/lib/authService";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { StudentProgressChart } from "@/components/analytics/student-progress-chart";
 
 // Client-side Quiz Storage
 type StoredQuiz = GenerateQuizQuestionsOutput & { courseId: string };
@@ -413,7 +413,14 @@ export default function TeacherPage() {
                     </Select>
                 </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-8">
+              <div className="h-80">
+                {isProgressLoading ? (
+                   <Skeleton className="w-full h-full" />
+                ) : (
+                  <StudentProgressChart results={quizResults} />
+                )}
+              </div>
               <Table>
                 <TableHeader>
                   <TableRow>

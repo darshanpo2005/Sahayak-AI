@@ -57,11 +57,11 @@ export default {
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
         chart: {
-          '1': 'hsl(var(--chart-1))',
-          '2': 'hsl(var(--chart-2))',
-          '3': 'hsl(var(--chart-3))',
-          '4': 'hsl(var(--chart-4))',
-          '5': 'hsl(var(--chart-5))',
+          '1': "hsl(var(--destructive))",
+          '2': "hsl(var(--destructive) / 0.7)",
+          '3': "hsl(var(--primary) / 0.6)",
+          '4': "hsl(var(--primary) / 0.8)",
+          '5': "hsl(var(--primary))",
         },
         sidebar: {
           DEFAULT: 'hsl(var(--card))',
