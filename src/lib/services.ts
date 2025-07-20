@@ -122,6 +122,23 @@ export const updateTeacher = async (id: string, updates: Partial<Teacher>): Prom
   return teachers[teacherIndex];
 }
 
+export const updateTeacherPassword = async (teacherId: string, currentPassword: string, newPassword: string):Promise<boolean> => {
+  await delay(300);
+  const teachers = getFromStorage('mock_teachers', defaultTeachers);
+  const teacherIndex = teachers.findIndex(t => t.id === teacherId);
+  if (teacherIndex === -1) return false;
+
+  const teacher = teachers[teacherIndex];
+  if (teacher.password !== currentPassword) {
+    return false;
+  }
+  
+  teacher.password = newPassword;
+  saveToStorage('mock_teachers', teachers);
+  return true;
+}
+
+
 export const deleteTeacher = async (id: string): Promise<void> => {
   await delay(300);
   let teachers = getFromStorage('mock_teachers', defaultTeachers);
@@ -184,6 +201,22 @@ export const updateStudent = async (id: string, updates: Partial<Student>): Prom
   }
   saveToStorage('mock_students', students);
   return students[studentIndex];
+}
+
+export const updateStudentPassword = async (studentId: string, currentPassword: string, newPassword: string):Promise<boolean> => {
+  await delay(300);
+  const students = getFromStorage('mock_students', defaultStudents);
+  const studentIndex = students.findIndex(s => s.id === studentId);
+  if (studentIndex === -1) return false;
+
+  const student = students[studentIndex];
+  if (student.password !== currentPassword) {
+    return false;
+  }
+  
+  student.password = newPassword;
+  saveToStorage('mock_students', students);
+  return true;
 }
 
 export const deleteStudent = async (id: string): Promise<void> => {
