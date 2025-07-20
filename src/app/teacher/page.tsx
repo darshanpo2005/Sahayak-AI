@@ -18,14 +18,14 @@ import { Lightbulb, HelpCircle, BarChart3, Bot, Sparkles, Loader2, CalendarCheck
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { getStudents, Student, Teacher, getCourses, Course } from "@/lib/services";
+import { getStudents, Student, Teacher, getCourses, Course, QuizResult, getQuizResultsForCourse } from "@/lib/services";
 import { getSession } from "@/lib/authService";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export type StoredQuiz = GenerateQuizQuestionsOutput & { courseId: string };
-
-export const storeQuiz = (courseId: string, quizData: GenerateQuizQuestionsOutput) => {
+// Client-side Quiz Storage
+type StoredQuiz = GenerateQuizQuestionsOutput & { courseId: string };
+const storeQuiz = (courseId: string, quizData: GenerateQuizQuestionsOutput) => {
   if (typeof window === 'undefined') return;
   const quizKey = `quiz_${courseId}`;
   const storedQuiz: StoredQuiz = { ...quizData, courseId };
@@ -49,6 +49,10 @@ export default function TeacherPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [isStudentsLoading, setIsStudentsLoading] = useState(true);
   const [courses, setCourses] = useState<Course[]>([]);
+  
+  const [progressCourseId, setProgressCourseId] = useState<string>("");
+  const [quizResults, setQuizResults] = useState<QuizResult[]>([]);
+  const [isProgressLoading, setIsProgressLoading] = useState(false);
 
   useEffect(() => {
     const currentSession = getSession();
@@ -68,8 +72,13 @@ export default function TeacherPage() {
           getStudents(),
           getCourses(),
         ]);
-        setStudents(studentsData.filter(s => s.teacherId === session.user.id));
-        setCourses(coursesData.filter(c => c.teacherId === session.user.id));
+        const teacherStudents = studentsData.filter(s => s.teacherId === session.user.id)
+        const teacherCourses = coursesData.filter(c => c.teacherId === session.user.id)
+        setStudents(teacherStudents);
+        setCourses(teacherCourses);
+        if (teacherCourses.length > 0) {
+          setProgressCourseId(teacherCourses[0].id)
+        }
       } catch (error) {
         toast({
           variant: "destructive",
@@ -84,6 +93,26 @@ export default function TeacherPage() {
       fetchData();
     }
   }, [session, toast]);
+
+  useEffect(() => {
+    const fetchProgressData = async () => {
+        if (!progressCourseId) return;
+        setIsProgressLoading(true);
+        try {
+            const results = await getQuizResultsForCourse(progressCourseId);
+            setQuizResults(results);
+        } catch (error) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Failed to load student progress.",
+            });
+        } finally {
+            setIsProgressLoading(false);
+        }
+    }
+    fetchProgressData();
+  }, [progressCourseId, toast]);
 
   const handleLessonPlanSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -147,15 +176,23 @@ export default function TeacherPage() {
     });
   };
 
-  const studentProgress = students.map(student => ({
-      name: student.name,
-      progress: Math.floor(Math.random() * 60) + 40, // Simulated progress
-      get status() {
-        if (this.progress > 90) return "Excelling";
-        if (this.progress > 70) return "On Track";
-        return "Needs Help";
-      }
-  }));
+  const getStudentName = (studentId: string) => {
+    return students.find(s => s.id === studentId)?.name || 'Unknown Student';
+  }
+
+  const getStudentProgress = (studentId: string) => {
+    const studentResults = quizResults.filter(r => r.studentId === studentId);
+    if (studentResults.length === 0) return { score: "N/A", status: "No Quiz Taken" };
+    // Get latest score
+    const latestResult = studentResults.sort((a,b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())[0];
+    const score = latestResult.score;
+    let status;
+    if (score >= 90) status = "Excelling";
+    else if (score >= 70) status = "On Track";
+    else status = "Needs Help";
+    return { score: `${score.toFixed(0)}%`, status };
+  };
+  
 
   if (!session) {
     return (
@@ -363,30 +400,49 @@ export default function TeacherPage() {
           <Card>
             <CardHeader>
               <CardTitle>Student Progress</CardTitle>
-              <CardDescription>Overview of your students' performance.</CardDescription>
+                <CardDescription>Overview of your students' performance on the latest quiz.</CardDescription>
+                <div className="pt-2">
+                    <Label htmlFor="progressCourse">Select Course</Label>
+                    <Select value={progressCourseId} onValueChange={setProgressCourseId}>
+                        <SelectTrigger id="progressCourse">
+                            <SelectValue placeholder="Select a course"/>
+                        </SelectTrigger>
+                        <SelectContent>
+                            {courses.map(c => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Student</TableHead>
-                    <TableHead>Progress</TableHead>
+                    <TableHead>Latest Score</TableHead>
                     <TableHead className="text-right">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {isStudentsLoading && <TableRow><TableCell colSpan={3} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
-                  {!isStudentsLoading && studentProgress.map((student) => (
-                    <TableRow key={student.name}>
-                      <TableCell className="font-medium">{student.name}</TableCell>
-                      <TableCell>
-                        <Progress value={student.progress} className="w-[80%]" />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Badge variant={student.status === "On Track" ? "default" : student.status === "Needs Help" ? "destructive" : "secondary"}>{student.status}</Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {isProgressLoading ? (
+                    <TableRow><TableCell colSpan={3} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>
+                   ) : students.length > 0 ? (
+                    students.map((student) => {
+                      const progress = getStudentProgress(student.id);
+                      return (
+                        <TableRow key={student.id}>
+                          <TableCell className="font-medium">{student.name}</TableCell>
+                          <TableCell>
+                            {progress.score}
+                          </TableCell>
+                          <TableCell className="text-right">
+                             <Badge variant={progress.status === "On Track" ? "default" : progress.status === "Needs Help" ? "destructive" : "secondary"}>{progress.status}</Badge>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })
+                   ) : (
+                    <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground">No students assigned.</TableCell></TableRow>
+                   )}
                 </TableBody>
               </Table>
             </CardContent>

@@ -27,6 +27,16 @@ export interface Course {
   teacherId: string;
 }
 
+export interface QuizResult {
+  id: string;
+  studentId: string;
+  courseId: string;
+  score: number;
+  correctAnswers: number;
+  totalQuestions: number;
+  submittedAt: string;
+}
+
 // Default Mock Database
 const defaultTeachers: Teacher[] = [
   { id: 't1', name: 'Jane Doe', email: 'jane.doe@school.com', password: 'password123', role: 'teacher' },
@@ -56,6 +66,9 @@ const defaultCourses: Course[] = [
   },
 ];
 
+const defaultQuizResults: QuizResult[] = [];
+
+
 const getFromStorage = <T>(key: string, defaultValue: T): T => {
     if (typeof window === 'undefined') {
         return defaultValue;
@@ -81,6 +94,7 @@ const saveToStorage = <T>(key: string, value: T) => {
 let mockTeachers: Teacher[] = getFromStorage('mock_teachers', defaultTeachers);
 let mockStudents: Student[] = getFromStorage('mock_students', defaultStudents);
 let mockCourses: Course[] = getFromStorage('mock_courses', defaultCourses);
+let mockQuizResults: QuizResult[] = getFromStorage('mock_quiz_results', defaultQuizResults);
 
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 const generateId = (prefix: string) => `${prefix}${Date.now()}${Math.random().toString(36).substring(2, 5)}`;
@@ -268,3 +282,37 @@ export async function deleteCourse(id: string): Promise<void> {
   const courses = getFromStorage('mock_courses', defaultCourses);
   saveToStorage('mock_courses', courses.filter(c => c.id !== id));
 };
+
+// Quiz Result Services
+export async function submitQuizResult(result: Omit<QuizResult, 'id' | 'submittedAt'>): Promise<void> {
+  await delay(100);
+  const results = getFromStorage('mock_quiz_results', defaultQuizResults);
+  const newResult: QuizResult = {
+    ...result,
+    id: generateId('qr'),
+    submittedAt: new Date().toISOString(),
+  };
+
+  // Remove previous result for the same student and course
+  const filteredResults = results.filter(
+    r => !(r.studentId === newResult.studentId && r.courseId === newResult.courseId)
+  );
+  
+  filteredResults.push(newResult);
+  saveToStorage('mock_quiz_results', filteredResults);
+}
+
+export async function getQuizResultsForCourse(courseId: string): Promise<QuizResult[]> {
+  await delay(200);
+  const results = getFromStorage('mock_quiz_results', defaultQuizResults);
+  return results.filter(r => r.courseId === courseId);
+}
+
+export async function getLatestQuizResultForStudent(studentId: string, courseId: string): Promise<QuizResult | null> {
+    await delay(100);
+    const results = getFromStorage('mock_quiz_results', defaultQuizResults);
+    const studentResultsForCourse = results
+        .filter(r => r.studentId === studentId && r.courseId === courseId)
+        .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+    return studentResultsForCourse[0] || null;
+}

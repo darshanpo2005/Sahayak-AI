@@ -8,15 +8,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { getCourses, Course } from "@/lib/services";
+import { getCourses, Course, Student, submitQuizResult } from "@/lib/services";
+import { getSession } from "@/lib/authService";
 import { GenerateQuizQuestionsOutput } from "@/lib/actions";
 import { Loader2, HelpCircle, CheckCircle, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Client-side Quiz Storage
-export type StoredQuiz = GenerateQuizQuestionsOutput & { courseId: string };
+type StoredQuiz = GenerateQuizQuestionsOutput & { courseId: string };
 
-export const getStoredQuiz = (courseId: string): StoredQuiz | null => {
+const getStoredQuiz = (courseId: string): StoredQuiz | null => {
   if (typeof window === 'undefined') return null;
   const quizKey = `quiz_${courseId}`;
   const quizData = localStorage.getItem(quizKey);
@@ -41,6 +42,14 @@ export default function StudentQuizPage() {
   const [isTakingQuiz, setIsTakingQuiz] = useState(false);
   const [answers, setAnswers] = useState<AnswerState>({});
   const [result, setResult] = useState<ResultState>(null);
+  const [session, setSession] = useState<{ user: Student; role: 'student' } | null>(null);
+
+  useEffect(() => {
+    const currentSession = getSession();
+    if (currentSession && currentSession.role === 'student') {
+        setSession(currentSession as { user: Student; role: 'student' });
+    }
+  }, []);
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -75,8 +84,8 @@ export default function StudentQuizPage() {
     setAnswers(prev => ({ ...prev, [questionIndex]: value }));
   };
 
-  const handleSubmitQuiz = () => {
-    if (!quiz) return;
+  const handleSubmitQuiz = async () => {
+    if (!quiz || !session) return;
 
     let correctCount = 0;
     const results = quiz.questions.map((q, index) => {
@@ -87,13 +96,34 @@ export default function StudentQuizPage() {
       return isCorrect;
     });
 
-    setResult({
+    const finalResult = {
       score: (correctCount / quiz.questions.length) * 100,
       correctAnswers: correctCount,
       totalQuestions: quiz.questions.length,
       results,
-    });
+    };
+    setResult(finalResult);
     setIsTakingQuiz(false);
+
+    try {
+        await submitQuizResult({
+            studentId: session.user.id,
+            courseId: selectedCourseId!,
+            score: finalResult.score,
+            correctAnswers: finalResult.correctAnswers,
+            totalQuestions: finalResult.totalQuestions
+        });
+        toast({
+            title: "Quiz Submitted",
+            description: "Your results have been saved."
+        });
+    } catch(e) {
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to save your quiz results."
+        });
+    }
   };
 
   const selectedCourse = courses.find(c => c.id === selectedCourseId);
@@ -113,7 +143,7 @@ export default function StudentQuizPage() {
               ) : (
                 <Select
                   onValueChange={(value) => setSelectedCourseId(value)}
-                  disabled={isTakingQuiz}
+                  disabled={isTakingQuiz || !!result}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a course" />
