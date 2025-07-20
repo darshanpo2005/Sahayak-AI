@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -13,22 +14,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Home,
   LogOut,
   Settings,
   User,
   Loader2,
   LayoutDashboard,
-  Users2,
-  BookOpen,
-  CalendarCheck,
-  MessageSquare,
   Copy,
-  Lightbulb,
   HelpCircle,
-  BarChart3,
   Shield,
-  CreditCard,
 } from "lucide-react";
 import { logout, getSession } from "@/lib/authService";
 import { useEffect, useState } from "react";
@@ -43,10 +36,7 @@ import {
   SidebarFooter,
   SidebarTrigger,
   SidebarInset,
-  useSidebar,
 } from "@/components/ui/sidebar";
-import { cn } from "@/lib/utils";
-import { useTheme } from "next-themes";
 
 type Session = {
   user: { name: string; email: string };
@@ -83,7 +73,9 @@ export function DashboardPage({
 
   useEffect(() => {
     const currentSession = getSession();
-    if (!currentSession || (role.toLowerCase() !== 'management' && currentSession.role !== role.toLowerCase())) {
+    // Special handling for management role which is just 'admin' in session
+    const expectedRole = role.toLowerCase();
+    if (!currentSession || currentSession.role !== expectedRole) {
         logout();
         if (role === 'Student') router.push('/student/login');
         if (role === 'Teacher') router.push('/teacher/login');
