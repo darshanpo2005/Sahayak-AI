@@ -56,6 +56,7 @@ export default function TeacherProfilePage() {
   }, [teacher, toast]);
   
   const getEnrolledCountForCourse = (courseId: string) => {
+    // This is a simple count for the prototype. In a real app, you'd have a proper relation.
     return assignedStudents.length;
   }
 
