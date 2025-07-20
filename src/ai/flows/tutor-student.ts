@@ -9,8 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {generate} from 'genkit/generate';
-import {Message, Role} from 'genkit/generate';
+import {generate, Message, Role} from 'genkit';
 import {z} from 'genkit';
 
 const TutorStudentInputSchema = z.object({
