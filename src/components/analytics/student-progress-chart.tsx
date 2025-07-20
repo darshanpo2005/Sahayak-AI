@@ -15,6 +15,7 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart"
 import type { QuizResult } from "@/lib/services"
+import { HelpCircle } from "lucide-react"
 
 const chartConfig = {
   students: {
@@ -36,8 +37,16 @@ export function StudentProgressChart({ results }: { results: QuizResult[] }) {
     { range: "<60", count: 0 },
   ]
 
+  const studentLatestScores: Record<string, number> = {};
+
+  // Get the latest score for each student
   results.forEach(result => {
-    const score = result.score;
+    if (!studentLatestScores[result.studentId] || new Date(result.submittedAt) > new Date(studentLatestScores[result.studentId])) {
+      studentLatestScores[result.studentId] = result.score;
+    }
+  });
+
+  Object.values(studentLatestScores).forEach(score => {
     if (score >= 90) scoreDistribution[0].count++;
     else if (score >= 80) scoreDistribution[1].count++;
     else if (score >= 70) scoreDistribution[2].count++;
@@ -51,37 +60,39 @@ export function StudentProgressChart({ results }: { results: QuizResult[] }) {
     fill: chartConfig[d.range as keyof typeof chartConfig].color,
   }))
 
+  const hasData = results.length > 0;
+
+  if (!hasData) {
+    return (
+        <div className="flex flex-col items-center justify-center text-center text-muted-foreground h-full">
+            <HelpCircle className="w-12 h-12 mb-4" />
+            <p className="font-medium">No Quiz Data Available</p>
+            <p className="text-sm">No students have taken the quiz for this course yet.</p>
+        </div>
+    )
+  }
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Quiz Score Distribution</CardTitle>
-        <CardDescription>
-          Shows the distribution of the latest quiz scores for the selected course.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="w-full h-64">
-          <BarChart
-            accessibilityLayer
-            data={chartData}
-            margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-          >
-            <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey="range"
-              tickLine={false}
-              tickMargin={10}
-              axisLine={false}
-            />
-            <YAxis allowDecimals={false} />
-            <ChartTooltip
-              cursor={false}
-              content={<ChartTooltipContent indicator="dot" />}
-            />
-            <Bar dataKey="students" radius={4} />
-          </BarChart>
-        </ChartContainer>
-      </CardContent>
-    </Card>
+    <ChartContainer config={chartConfig} className="w-full h-full">
+      <BarChart
+        accessibilityLayer
+        data={chartData}
+        margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+      >
+        <CartesianGrid vertical={false} />
+        <XAxis
+          dataKey="range"
+          tickLine={false}
+          tickMargin={10}
+          axisLine={false}
+        />
+        <YAxis allowDecimals={false} />
+        <ChartTooltip
+          cursor={false}
+          content={<ChartTooltipContent indicator="dot" />}
+        />
+        <Bar dataKey="students" radius={4} />
+      </BarChart>
+    </ChartContainer>
   )
 }

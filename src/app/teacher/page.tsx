@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { getLessonPlan, getQuiz } from "@/lib/actions";
 import type { GenerateLessonPlanAssistanceOutput, GenerateQuizQuestionsOutput } from "@/lib/actions";
-import { Lightbulb, HelpCircle, BarChart3, Bot, Sparkles, Loader2, CalendarCheck, CheckCircle2 } from "lucide-react";
+import { Lightbulb, HelpCircle, BarChart3, Bot, Sparkles, Loader2, CalendarCheck, CheckCircle2, RefreshCw } from "lucide-react";
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
@@ -76,8 +76,8 @@ export default function TeacherPage() {
         const teacherCourses = coursesData.filter(c => c.teacherId === session.user.id)
         setStudents(teacherStudents);
         setCourses(teacherCourses);
-        if (teacherCourses.length > 0) {
-          setProgressCourseId(teacherCourses[0].id)
+        if (teacherCourses.length > 0 && !progressCourseId) {
+          setProgressCourseId(teacherCourses[0].id);
         }
       } catch (error) {
         toast({
@@ -92,25 +92,26 @@ export default function TeacherPage() {
     if (session) {
       fetchData();
     }
-  }, [session, toast]);
+  }, [session, toast, progressCourseId]);
+
+  const fetchProgressData = async () => {
+    if (!progressCourseId) return;
+    setIsProgressLoading(true);
+    try {
+        const results = await getQuizResultsForCourse(progressCourseId);
+        setQuizResults(results);
+    } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to load student progress.",
+        });
+    } finally {
+        setIsProgressLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchProgressData = async () => {
-        if (!progressCourseId) return;
-        setIsProgressLoading(true);
-        try {
-            const results = await getQuizResultsForCourse(progressCourseId);
-            setQuizResults(results);
-        } catch (error) {
-            toast({
-                variant: "destructive",
-                title: "Error",
-                description: "Failed to load student progress.",
-            });
-        } finally {
-            setIsProgressLoading(false);
-        }
-    }
     fetchProgressData();
   }, [progressCourseId, toast]);
 
@@ -175,10 +176,6 @@ export default function TeacherPage() {
       description: "Today's attendance has been successfully recorded.",
     });
   };
-
-  const getStudentName = (studentId: string) => {
-    return students.find(s => s.id === studentId)?.name || 'Unknown Student';
-  }
 
   const getStudentProgress = (studentId: string) => {
     const studentResults = quizResults.filter(r => r.studentId === studentId);
@@ -398,9 +395,17 @@ export default function TeacherPage() {
 
         <TabsContent value="progress">
           <Card>
-            <CardHeader>
-              <CardTitle>Student Progress</CardTitle>
+            <CardHeader className="flex-row items-center justify-between">
+              <div>
+                <CardTitle>Student Progress</CardTitle>
                 <CardDescription>Overview of your students' performance on the latest quiz.</CardDescription>
+              </div>
+              <Button onClick={fetchProgressData} variant="outline" size="sm" disabled={isProgressLoading}>
+                <RefreshCw className={cn("mr-2 h-4 w-4", isProgressLoading && "animate-spin")} />
+                Refresh
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-8">
                 <div className="pt-2">
                     <Label htmlFor="progressCourse">Select Course</Label>
                     <Select value={progressCourseId} onValueChange={setProgressCourseId}>
@@ -412,11 +417,11 @@ export default function TeacherPage() {
                         </SelectContent>
                     </Select>
                 </div>
-            </CardHeader>
-            <CardContent className="space-y-8">
               <div className="h-80">
                 {isProgressLoading ? (
-                   <Skeleton className="w-full h-full" />
+                   <div className="flex items-center justify-center h-full">
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                   </div>
                 ) : (
                   <StudentProgressChart results={quizResults} />
                 )}
