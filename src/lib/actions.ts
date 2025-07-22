@@ -144,7 +144,8 @@ export async function getFlashcards(input: GenerateFlashcardsInput): Promise<Fla
     return { success: true, data: result };
   } catch (error) {
     console.error("Error generating flashcards:", error);
-    return { success: false, error: "An unexpected error occurred while generating flashcards." };
+    const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred while generating flashcards.";
+    return { success: false, error: errorMessage };
   }
 }
 
