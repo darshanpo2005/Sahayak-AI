@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 export const metadata: Metadata = {
   title: 'Sahayak AI',
   description: 'Multi-User AI Assistant Prototype',
+  manifest: '/manifest.json'
 };
 
 export default function RootLayout({
