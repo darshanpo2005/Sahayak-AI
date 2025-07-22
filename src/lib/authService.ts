@@ -1,3 +1,4 @@
+
 import { getStudentByEmail, getTeacherByEmail, Student, Teacher } from "./services";
 
 const SESSION_KEY = "sahayak-session";
@@ -38,7 +39,7 @@ export const loginStudent = async (email: string, password: string):Promise<Stud
     return null;
 }
 
-export const loginTeacher = async (email: string, password: string): Promise<Teacher | null> => {
+export const loginTeacher = async (email: string, password: string): Promise<Omit<Teacher, 'password'> | null> => {
     const teacher = await getTeacherByEmail(email);
     if (teacher && teacher.role !== 'admin' && teacher.password === password) {
         // Don't store password in session
