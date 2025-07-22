@@ -235,6 +235,19 @@ export async function deleteStudent(id: string): Promise<void> {
   db.students = db.students.filter(s => s.id !== id);
 };
 
+export async function notifyTeacherOfQuestion(studentId: string, question: string, courseTopic: string): Promise<void> {
+  await delay(50);
+  const student = await getStudentById(studentId);
+  if (!student || !student.teacherId) return;
+
+  await createNotification({
+    userId: student.teacherId,
+    message: `${student.name} asked a question about "${courseTopic}": "${question.substring(0, 50)}${question.length > 50 ? '...' : ''}"`,
+    link: '/teacher?tab=qna', // A future Q&A tab for teachers
+  });
+}
+
+
 // Course Services
 export async function addCourse(course: Omit<Course, 'id'>): Promise<Course> {
   await delay(300);
