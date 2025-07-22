@@ -1,16 +1,9 @@
 
 'use server';
 
-// Mock notification service. No database connection needed.
+import type { Notification } from './types';
 
-export interface Notification {
-  id: string;
-  userId: string; // The ID of the user who should receive the notification (e.g., a teacher's ID)
-  message: string;
-  read: boolean;
-  createdAt: string;
-  link?: string; // Optional link for the notification
-}
+// Mock notification service. No database connection needed.
 
 // Use a global singleton to persist data across hot reloads in development
 const globalForDb = globalThis as unknown as { notifications: Notification[] | undefined };

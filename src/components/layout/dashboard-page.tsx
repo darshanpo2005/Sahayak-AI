@@ -41,7 +41,8 @@ import {
   SidebarTrigger,
   SidebarInset,
 } from "@/components/ui/sidebar";
-import { getNotificationsForUser, markAllNotificationsAsRead, Notification } from "@/lib/notificationService";
+import { getNotificationsForUser, markAllNotificationsAsRead } from "@/lib/notificationService";
+import type { Notification } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from 'date-fns';
@@ -296,4 +297,3 @@ export function DashboardPage({
     </SidebarProvider>
   );
 }
-

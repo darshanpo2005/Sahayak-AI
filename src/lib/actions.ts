@@ -5,6 +5,7 @@ import { generateQuizQuestions, GenerateQuizQuestionsInput, GenerateQuizQuestion
 import { tutorStudent, TutorStudentInput, TutorStudentOutput } from "@/ai/flows/tutor-student";
 import { generateCertificate, GenerateCertificateInput, GenerateCertificateOutput } from "@/ai/flows/generate-certificate";
 import { generateFlashcards, GenerateFlashcardsInput, GenerateFlashcardsOutput } from "@/ai/flows/generate-flashcards";
+import { translateText, TranslateTextInput, TranslateTextOutput } from "@/ai/flows/translate-text";
 
 type LessonPlanResult = {
   success: true;
@@ -41,6 +42,14 @@ type CertificateResult = {
 type FlashcardsResult = {
   success: true;
   data: GenerateFlashcardsOutput;
+} | {
+  success: false;
+  error: string;
+};
+
+type TranslationResult = {
+  success: true;
+  data: TranslateTextOutput;
 } | {
   success: false;
   error: string;
@@ -116,5 +125,20 @@ export async function getFlashcards(input: GenerateFlashcardsInput): Promise<Fla
   }
 }
 
+export async function getTranslation(input: TranslateTextInput): Promise<TranslationResult> {
+  if (!input.text || !input.targetLanguage) {
+    return { success: false, error: "Text and target language are required." };
+  }
+  
+  try {
+    const result = await translateText(input);
+    return { success: true, data: result };
+  } catch (error) {
+    console.error("Error translating text:", error);
+    return { success: false, error: "An unexpected error occurred during translation." };
+  }
+}
+
+
 // Export types for use in client components
-export type { GenerateLessonPlanAssistanceOutput, GenerateQuizQuestionsOutput, TutorStudentOutput, GenerateCertificateOutput, GenerateFlashcardsOutput };
+export type { GenerateLessonPlanAssistanceOutput, GenerateQuizQuestionsOutput, TutorStudentOutput, GenerateCertificateOutput, GenerateFlashcardsOutput, TranslateTextOutput };
