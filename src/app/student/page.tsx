@@ -1,27 +1,31 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Book, MessageSquare, Send, Bot, Loader2, CalendarCheck, Film, Award, Copy } from "lucide-react";
+import { Book, MessageSquare, Send, Bot, Loader2, CalendarCheck, Film, Award, Copy, Volume2, Play, Pause } from "lucide-react";
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
-import { getTutorResponse, getCertificate } from "@/lib/actions";
+import { getTutorResponse, getCertificate, getAudioForText } from "@/lib/actions";
 import { getCourses, Course, Student } from "@/lib/services";
 import { useToast } from "@/hooks/use-toast";
 import { getSession } from "@/lib/authService";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
+
 
 type ChatMessage = {
   role: "user" | "model";
   content: string;
+  audioDataUri?: string;
+  isPlaying?: boolean;
 };
 
 export default function StudentPage() {
@@ -35,7 +39,8 @@ export default function StudentPage() {
   const [isLoadingCourses, setIsLoadingCourses] = useState(true);
   const [activeCourseTopic, setActiveCourseTopic] = useState("your course");
   const [isGeneratingCert, setIsGeneratingCert] = useState<string | null>(null);
-
+  const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     const currentSession = getSession();
@@ -77,6 +82,36 @@ export default function StudentPage() {
     { date: "2024-07-18", status: "Late" },
   ];
 
+  const handleAudioEnded = () => {
+    setChatHistory(prev => prev.map(msg => ({ ...msg, isPlaying: false })));
+  };
+
+  const toggleAudio = (index: number) => {
+    const message = chatHistory[index];
+    if (!message || !message.audioDataUri) return;
+
+    if (message.isPlaying) {
+      audioRef.current?.pause();
+      setChatHistory(prev => prev.map((msg, i) => i === index ? { ...msg, isPlaying: false } : msg));
+    } else {
+      // Pause any other playing audio
+      audioRef.current?.pause();
+
+      if (audioRef.current) {
+        audioRef.current.removeEventListener('ended', handleAudioEnded);
+      }
+      
+      const newAudio = new Audio(message.audioDataUri);
+      audioRef.current = newAudio;
+      newAudio.play();
+      
+      newAudio.addEventListener('ended', handleAudioEnded);
+
+      setChatHistory(prev => prev.map((msg, i) => ({ ...msg, isPlaying: i === index })));
+    }
+  };
+
+
   const handleQuestionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!question.trim()) return;
@@ -94,11 +129,30 @@ export default function StudentPage() {
     });
 
     if (result.success) {
-      setChatHistory([...newHistory, { role: "model", content: result.data.answer }]);
+      const answer = result.data.answer;
+      const modelMessage: ChatMessage = { role: "model", content: answer };
+      const updatedHistory = [...newHistory, modelMessage];
+      setChatHistory(updatedHistory);
+      setIsAnswering(false);
+      
+      setIsGeneratingAudio(true);
+      const audioResult = await getAudioForText({ text: answer });
+
+      if (audioResult.success) {
+        setChatHistory(prev => prev.map(msg => msg === modelMessage ? {...msg, audioDataUri: audioResult.data.audioDataUri} : msg));
+      } else {
+         toast({
+            variant: "destructive",
+            title: "Audio Generation Failed",
+            description: audioResult.error,
+          });
+      }
+      setIsGeneratingAudio(false);
+
     } else {
       setChatHistory([...newHistory, { role: "model", content: `Sorry, I encountered an error: ${result.error}` }]);
+      setIsAnswering(false);
     }
-    setIsAnswering(false);
   };
 
   const handleGenerateCertificate = async (courseName: string) => {
@@ -262,11 +316,19 @@ export default function StudentPage() {
                 <ScrollArea className="h-full pr-4">
                   <div className="space-y-4">
                   {chatHistory.map((chat, index) => (
-                    <div key={index} className={`flex items-start gap-3 ${chat.role === 'user' ? 'justify-end' : ''}`}>
+                    <div key={index} className={cn('flex items-start gap-3', chat.role === 'user' ? 'justify-end' : '')}>
                       {chat.role === 'model' && (
-                        <Avatar>
-                          <AvatarFallback><Bot /></AvatarFallback>
-                        </Avatar>
+                         <div className="flex flex-col items-center gap-2">
+                           <Avatar>
+                             <AvatarFallback><Bot /></AvatarFallback>
+                           </Avatar>
+                           {chat.audioDataUri && (
+                             <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => toggleAudio(index)} disabled={isGeneratingAudio}>
+                               {chat.isPlaying ? <Pause className="h-4 w-4"/> : <Volume2 className="h-4 w-4"/>}
+                             </Button>
+                           )}
+                           {isGeneratingAudio && !chat.audioDataUri && <Loader2 className="h-4 w-4 animate-spin"/>}
+                         </div>
                       )}
                        <div className={`rounded-lg px-4 py-2 max-w-[85%] whitespace-pre-wrap font-sans text-sm ${chat.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                         <p>{chat.content}</p>

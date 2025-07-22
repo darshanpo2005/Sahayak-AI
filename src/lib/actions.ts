@@ -6,18 +6,8 @@ import { generateQuizQuestions, GenerateQuizQuestionsInput, GenerateQuizQuestion
 import { tutorStudent, TutorStudentInput, TutorStudentOutput } from "@/ai/flows/tutor-student";
 import { generateCertificate, GenerateCertificateInput, GenerateCertificateOutput } from "@/ai/flows/generate-certificate";
 import { generateFlashcards, GenerateFlashcardsInput, GenerateFlashcardsOutput } from "@/ai/flows/generate-flashcards";
-import { translateText } from "@/ai/flows/translate-text";
-
-// Type definitions for translation
-export type TranslateTextInput = {
-  text: string;
-  targetLanguage: string;
-};
-
-export type TranslateTextOutput = {
-    translation: string;
-};
-
+import { translateText as translateTextFlow, TranslateTextInput, TranslateTextOutput } from "@/ai/flows/translate-text";
+import { textToSpeech, TextToSpeechInput, TextToSpeechOutput } from "@/ai/flows/text-to-speech";
 
 type LessonPlanResult = {
   success: true;
@@ -62,6 +52,14 @@ type FlashcardsResult = {
 type TranslationResult = {
   success: true;
   data: TranslateTextOutput;
+} | {
+  success: false;
+  error: string;
+};
+
+type AudioResult = {
+  success: true;
+  data: TextToSpeechOutput;
 } | {
   success: false;
   error: string;
@@ -143,11 +141,25 @@ export async function getTranslation(input: TranslateTextInput): Promise<Transla
   }
   
   try {
-    const result = await translateText(input);
+    const result = await translateTextFlow(input);
     return { success: true, data: result };
   } catch (error) {
     console.error("Error translating text:", error);
     const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred during translation.";
+    return { success: false, error: errorMessage };
+  }
+}
+
+export async function getAudioForText(input: TextToSpeechInput): Promise<AudioResult> {
+  if (!input.text) {
+    return { success: false, error: "Text is required to generate audio." };
+  }
+  try {
+    const result = await textToSpeech(input);
+    return { success: true, data: result };
+  } catch (error) {
+    console.error("Error generating audio:", error);
+    const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred during audio generation.";
     return { success: false, error: errorMessage };
   }
 }
