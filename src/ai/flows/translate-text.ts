@@ -6,11 +6,12 @@
  * - translateText - A function that handles the text translation.
  */
 
-import { generate } from 'genkit';
+import { ai } from '@/ai/genkit';
 import type { TranslateTextInput, TranslateTextOutput } from '@/lib/actions';
 
-
-export async function translateText(input: TranslateTextInput): Promise<TranslateTextOutput> {
+export async function translateText(
+  input: TranslateTextInput
+): Promise<TranslateTextOutput> {
   const { text, targetLanguage } = input;
 
   const prompt = `Translate the following text into ${targetLanguage}.
@@ -21,12 +22,11 @@ export async function translateText(input: TranslateTextInput): Promise<Translat
   "${text}"
   `;
 
-  const { output } = await generate({
-      model: 'googleai/gemini-2.0-flash',
-      prompt: prompt,
+  const response = await ai.generate({
+    prompt: prompt,
   });
 
-  const translation = output?.text ?? "";
+  const translation = response.text;
 
   if (!translation) {
     throw new Error('Translation failed or returned empty.');
