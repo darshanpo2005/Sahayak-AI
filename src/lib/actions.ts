@@ -1,11 +1,23 @@
 'use server';
 
+import { z } from 'zod';
 import { generateLessonPlanAssistance, GenerateLessonPlanAssistanceInput, GenerateLessonPlanAssistanceOutput } from "@/ai/flows/generate-lesson-plan-assistance";
 import { generateQuizQuestions, GenerateQuizQuestionsInput, GenerateQuizQuestionsOutput } from "@/ai/flows/generate-quiz-questions";
 import { tutorStudent, TutorStudentInput, TutorStudentOutput } from "@/ai/flows/tutor-student";
 import { generateCertificate, GenerateCertificateInput, GenerateCertificateOutput } from "@/ai/flows/generate-certificate";
 import { generateFlashcards, GenerateFlashcardsInput, GenerateFlashcardsOutput } from "@/ai/flows/generate-flashcards";
-import { translateText, TranslateTextInput, TranslateTextOutput } from "@/ai/flows/translate-text";
+import { translateText } from "@/ai/flows/translate-text";
+
+// Type definitions for translation
+export type TranslateTextInput = {
+  text: string;
+  targetLanguage: string;
+};
+
+export type TranslateTextOutput = {
+    translation: string;
+};
+
 
 type LessonPlanResult = {
   success: true;
@@ -141,4 +153,4 @@ export async function getTranslation(input: TranslateTextInput): Promise<Transla
 
 
 // Export types for use in client components
-export type { GenerateLessonPlanAssistanceOutput, GenerateQuizQuestionsOutput, TutorStudentOutput, GenerateCertificateOutput, GenerateFlashcardsOutput, TranslateTextOutput };
+export type { GenerateLessonPlanAssistanceOutput, GenerateQuizQuestionsOutput, TutorStudentOutput, GenerateCertificateOutput, GenerateFlashcardsOutput };
