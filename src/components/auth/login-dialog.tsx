@@ -14,6 +14,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { loginAdmin } from "@/lib/authService";
+import { Loader2 } from "lucide-react";
 
 type ManagementLoginDialogProps = {
   open: boolean;
@@ -27,13 +29,13 @@ export function ManagementLoginDialog({ open, onOpenChange }: ManagementLoginDia
   const router = useRouter();
   const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate network delay
-    setTimeout(() => {
-      if (email === "admin@sahayak.com" && password === "SahayakAdmin123") {
+    try {
+      const admin = await loginAdmin(email, password);
+      if (admin) {
         toast({
           title: "Login Successful",
           description: "Redirecting to management dashboard...",
@@ -47,7 +49,14 @@ export function ManagementLoginDialog({ open, onOpenChange }: ManagementLoginDia
         });
         setIsLoading(false);
       }
-    }, 500);
+    } catch (error) {
+       toast({
+          variant: "destructive",
+          title: "Error",
+          description: "An unexpected error occurred during login.",
+        });
+       setIsLoading(false);
+    }
   };
 
   return (
@@ -73,6 +82,7 @@ export function ManagementLoginDialog({ open, onOpenChange }: ManagementLoginDia
                 className="col-span-3"
                 placeholder="admin@sahayak.com"
                 required
+                disabled={isLoading}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -87,12 +97,13 @@ export function ManagementLoginDialog({ open, onOpenChange }: ManagementLoginDia
                 className="col-span-3"
                 placeholder="••••••••••••"
                 required
+                disabled={isLoading}
               />
             </div>
           </div>
           <DialogFooter>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Verifying..." : "Login"}
+              {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying...</> : "Login"}
             </Button>
           </DialogFooter>
         </form>

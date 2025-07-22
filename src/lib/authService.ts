@@ -40,7 +40,7 @@ export const loginStudent = async (email: string, password: string):Promise<Stud
 
 export const loginTeacher = async (email: string, password: string): Promise<Teacher | null> => {
     const teacher = await getTeacherByEmail(email);
-    if (teacher && teacher.password === password) {
+    if (teacher && teacher.role !== 'admin' && teacher.password === password) {
         // Don't store password in session
         const { password: _, ...teacherData } = teacher;
         const sessionData: Session = { user: teacherData, role: teacher.role || 'teacher' };
@@ -48,6 +48,19 @@ export const loginTeacher = async (email: string, password: string): Promise<Tea
             localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
         }
         return teacherData;
+    }
+    return null;
+}
+
+export const loginAdmin = async (email: string, password: string): Promise<Omit<Teacher, 'password'> | null> => {
+    const admin = await getTeacherByEmail(email);
+    if (admin && admin.role === 'admin' && admin.password === password) {
+        const { password: _, ...adminData } = admin;
+        const sessionData: Session = { user: adminData, role: 'admin' };
+        if (typeof window !== 'undefined') {
+            localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
+        }
+        return adminData;
     }
     return null;
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -33,6 +34,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { getSession } from "@/lib/authService";
 
 
 type DeletionTarget = { type: 'teacher' | 'student' | 'course', id: string, name: string } | null;
@@ -40,6 +42,7 @@ type EditingTarget = { type: 'teacher', data: Teacher } | { type: 'student', dat
 
 export default function ManagementPage() {
   const { toast } = useToast();
+  const router = useRouter();
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -50,6 +53,13 @@ export default function ManagementPage() {
   const [deletionTarget, setDeletionTarget] = useState<DeletionTarget>(null);
   const [editingTarget, setEditingTarget] = useState<EditingTarget>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+
+  useEffect(() => {
+    const session = getSession();
+    if (!session || session.role !== 'admin') {
+      router.push('/');
+    }
+  }, [router]);
 
   const fetchDashboardData = async () => {
     setIsLoading(true);
