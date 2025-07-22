@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -139,6 +139,12 @@ export function DashboardPage({
     }
   }
 
+  const handleNotificationClick = (notification: Notification) => {
+    if (notification.link) {
+        router.push(notification.link);
+    }
+  }
+
   if (isLoading) {
       return (
           <div className="flex justify-center items-center min-h-screen">
@@ -235,7 +241,7 @@ export function DashboardPage({
                                 <DropdownMenuGroup>
                                 {notifications.length > 0 ? (
                                     notifications.map(n => (
-                                        <DropdownMenuItem key={n.id} className={cn("flex-col items-start gap-1 whitespace-normal", !n.read && "bg-accent/50")}>
+                                        <DropdownMenuItem key={n.id} className={cn("flex-col items-start gap-1 whitespace-normal cursor-pointer", !n.read && "bg-accent/50")} onClick={() => handleNotificationClick(n)}>
                                             <p className="font-medium text-sm text-foreground">{n.message}</p>
                                             <p className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}</p>
                                         </DropdownMenuItem>

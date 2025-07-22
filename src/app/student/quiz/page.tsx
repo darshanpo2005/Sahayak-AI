@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -85,7 +86,7 @@ export default function StudentQuizPage() {
   };
 
   const handleSubmitQuiz = async () => {
-    if (!quiz || !session) return;
+    if (!quiz || !session || !selectedCourseId) return;
 
     let correctCount = 0;
     const results = quiz.questions.map((q, index) => {
@@ -108,7 +109,7 @@ export default function StudentQuizPage() {
     try {
         await submitQuizResult({
             studentId: session.user.id,
-            courseId: selectedCourseId!,
+            courseId: selectedCourseId,
             score: finalResult.score,
             correctAnswers: finalResult.correctAnswers,
             totalQuestions: finalResult.totalQuestions
@@ -150,7 +151,7 @@ export default function StudentQuizPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {courses.map(course => (
-                      <SelectItem key={course.id} value={course.id}>
+                      <SelectItem key={course.id} value={course.id!}>
                         {course.title}
                       </SelectItem>
                     ))}

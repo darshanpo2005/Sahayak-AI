@@ -117,7 +117,9 @@ export default function TeacherPage() {
   };
 
   useEffect(() => {
-    fetchProgressData();
+    if (progressCourseId) {
+      fetchProgressData();
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progressCourseId]);
 

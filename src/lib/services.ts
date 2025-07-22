@@ -80,7 +80,11 @@ const db = globalForDb.db ?? {
       teacherId: 't2' 
     },
   ],
-  quizResults: [],
+  quizResults: [
+    { id: 'qr1', studentId: 's1', courseId: 'c1', score: 80, correctAnswers: 4, totalQuestions: 5, submittedAt: '2024-07-28T10:00:00Z' },
+    { id: 'qr2', studentId: 's2', courseId: 'c1', score: 60, correctAnswers: 3, totalQuestions: 5, submittedAt: '2024-07-28T10:05:00Z' },
+    { id: 'qr3', studentId: 's3', courseId: 'c2', score: 95, correctAnswers: 19, totalQuestions: 20, submittedAt: '2024-07-28T11:00:00Z' },
+  ],
 };
 
 if (process.env.NODE_ENV !== 'production') globalForDb.db = db;
@@ -293,8 +297,8 @@ export async function submitQuizResult(result: Omit<QuizResult, 'id' | 'submitte
   if (student && course && course.teacherId) {
     await createNotification({
       userId: course.teacherId,
-      message: `${student.name} submitted a quiz for ${course.title}.`,
-      link: '/teacher', // Later, we can link to the specific student/quiz
+      message: `${student.name} submitted a quiz for ${course.title}. Score: ${result.score}%`,
+      link: '/teacher?tab=progress', // Link to the progress tab
     });
   }
 }
