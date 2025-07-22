@@ -41,6 +41,8 @@ export interface QuizResult {
   correctAnswers: number;
   totalQuestions: number;
   submittedAt: string;
+  answers: Record<number, string>;
+  graded?: boolean;
 }
 
 interface MockDB {
@@ -81,9 +83,9 @@ const db = globalForDb.db ?? {
     },
   ],
   quizResults: [
-    { id: 'qr1', studentId: 's1', courseId: 'c1', score: 80, correctAnswers: 4, totalQuestions: 5, submittedAt: '2024-07-28T10:00:00Z' },
-    { id: 'qr2', studentId: 's2', courseId: 'c1', score: 60, correctAnswers: 3, totalQuestions: 5, submittedAt: '2024-07-28T10:05:00Z' },
-    { id: 'qr3', studentId: 's3', courseId: 'c2', score: 95, correctAnswers: 19, totalQuestions: 20, submittedAt: '2024-07-28T11:00:00Z' },
+    { id: 'qr1', studentId: 's1', courseId: 'c1', score: 80, correctAnswers: 4, totalQuestions: 5, submittedAt: '2024-07-28T10:00:00Z', answers: {0: "A", 1: "B", 2: "C", 3: "D", 4: "A"}, graded: false },
+    { id: 'qr2', studentId: 's2', courseId: 'c1', score: 60, correctAnswers: 3, totalQuestions: 5, submittedAt: '2024-07-28T10:05:00Z', answers: {0: "B", 1: "B", 2: "C", 3: "D", 4: "B"}, graded: true },
+    { id: 'qr3', studentId: 's3', courseId: 'c2', score: 95, correctAnswers: 19, totalQuestions: 20, submittedAt: '2024-07-28T11:00:00Z', answers: {}, graded: false },
   ],
 };
 
@@ -287,12 +289,13 @@ export async function deleteCourse(id: string): Promise<void> {
 };
 
 // Quiz Result Services
-export async function submitQuizResult(result: Omit<QuizResult, 'id' | 'submittedAt'>): Promise<void> {
+export async function submitQuizResult(result: Omit<QuizResult, 'id' | 'submittedAt' | 'graded'>): Promise<void> {
   await delay(100);
   const newResult: QuizResult = {
     ...result,
     id: generateId('qr'),
     submittedAt: new Date().toISOString(),
+    graded: false
   };
 
   // Remove previous result for the same student and course
@@ -311,9 +314,29 @@ export async function submitQuizResult(result: Omit<QuizResult, 'id' | 'submitte
     await createNotification({
       userId: course.teacherId,
       message: `${student.name} submitted a quiz for ${course.title}. Score: ${result.score}%`,
-      link: '/teacher?tab=progress', // Link to the progress tab
+      link: `/teacher/grading?courseId=${course.id}&studentId=${student.id}`,
     });
   }
+}
+
+export async function gradeQuiz(quizResultId: string): Promise<boolean> {
+  await delay(100);
+  const result = db.quizResults.find(r => r.id === quizResultId);
+  if (!result) return false;
+  
+  result.graded = true;
+
+  const student = await getStudentById(result.studentId);
+  const course = db.courses.find(c => c.id === result.courseId);
+
+  if (student && course) {
+    await createNotification({
+      userId: student.id,
+      message: `Your quiz for "${course.title}" has been graded! Your score is ${result.score.toFixed(0)}%.`,
+      link: `/student/quiz?courseId=${course.id}&graded=true`
+    });
+  }
+  return true;
 }
 
 export async function getQuizResultsForCourse(courseId: string): Promise<QuizResult[]> {

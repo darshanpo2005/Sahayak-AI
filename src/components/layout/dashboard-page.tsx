@@ -26,6 +26,7 @@ import {
   Shield,
   Bell,
   Check,
+  GraduationCap,
 } from "lucide-react";
 import { logout, getSession } from "@/lib/authService";
 import { useEffect, useState } from "react";
@@ -61,6 +62,7 @@ const studentNavItems = [
 
 const teacherNavItems = [
   { href: "/teacher", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/teacher/grading", icon: GraduationCap, label: "Grading Center" },
 ];
 
 const managementNavItems = [

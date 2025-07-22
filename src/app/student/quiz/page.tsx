@@ -112,7 +112,8 @@ export default function StudentQuizPage() {
             courseId: selectedCourseId,
             score: finalResult.score,
             correctAnswers: finalResult.correctAnswers,
-            totalQuestions: finalResult.totalQuestions
+            totalQuestions: finalResult.totalQuestions,
+            answers: answers,
         });
         toast({
             title: "Quiz Submitted",
@@ -143,6 +144,7 @@ export default function StudentQuizPage() {
                 <Loader2 className="h-6 w-6 animate-spin" />
               ) : (
                 <Select
+                  value={selectedCourseId || ''}
                   onValueChange={(value) => setSelectedCourseId(value)}
                   disabled={isTakingQuiz || !!result}
                 >
