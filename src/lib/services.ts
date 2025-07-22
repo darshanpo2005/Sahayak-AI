@@ -4,6 +4,7 @@
 import { createNotification } from './notificationService';
 
 // Mock data services. No database connection needed.
+export type Theme = 'default' | 'green' | 'purple';
 
 export interface Teacher {
   id: string;
@@ -11,6 +12,7 @@ export interface Teacher {
   email: string;
   password?: string; // Should be handled securely in a real app
   role?: 'teacher' | 'admin';
+  theme?: Theme;
 }
 
 export interface Student {
@@ -20,6 +22,7 @@ export interface Student {
   password?: string; // Should be handled securely in a real app
   grade: string;
   teacherId: string;
+  theme?: Theme;
 }
 
 export interface Course {
@@ -52,14 +55,14 @@ const globalForDb = globalThis as unknown as { db: MockDB | undefined };
 
 const db = globalForDb.db ?? {
   teachers: [
-    { id: 't1', name: 'Jane Doe', email: 'jane.doe@school.com', password: 'password123', role: 'teacher' },
-    { id: 't2', name: 'John Smith', email: 'john.smith@school.com', password: 'password123', role: 'teacher' },
+    { id: 't1', name: 'Jane Doe', email: 'jane.doe@school.com', password: 'password123', role: 'teacher', theme: 'default' },
+    { id: 't2', name: 'John Smith', email: 'john.smith@school.com', password: 'password123', role: 'teacher', theme: 'default' },
     { id: 't0', name: 'Admin User', email: 'admin@sahayak.com', password: 'SahayakAdmin123', role: 'admin' },
   ],
   students: [
-    { id: 's1', name: 'Alex Doe', grade: '10th Grade', teacherId: 't1', email: 'alex.doe@school.com', password: 'password123' },
-    { id: 's2', name: 'Sam Wilson', grade: '10th Grade', teacherId: 't1', email: 'sam.wilson@school.com', password: 'password123' },
-    { id: 's3', name: 'Maria Hill', grade: '11th Grade', teacherId: 't2', email: 'maria.hill@school.com', password: 'password123' },
+    { id: 's1', name: 'Alex Doe', grade: '10th Grade', teacherId: 't1', email: 'alex.doe@school.com', password: 'password123', theme: 'default' },
+    { id: 's2', name: 'Sam Wilson', grade: '10th Grade', teacherId: 't1', email: 'sam.wilson@school.com', password: 'password123', theme: 'default' },
+    { id: 's3', name: 'Maria Hill', grade: '11th Grade', teacherId: 't2', email: 'maria.hill@school.com', password: 'password123', theme: 'default' },
   ],
   courses: [
     { 
@@ -88,7 +91,7 @@ const generateId = (prefix: string) => `${prefix}${Date.now()}${Math.random().to
 // Teacher Services
 export async function addTeacher(teacher: Omit<Teacher, 'id'>): Promise<Teacher> {
   await delay(300);
-  const newTeacher: Teacher = { ...teacher, id: generateId('t') };
+  const newTeacher: Teacher = { ...teacher, id: generateId('t'), theme: 'default' };
   db.teachers.push(newTeacher);
   return newTeacher;
 };
@@ -134,6 +137,14 @@ export async function updateTeacherPassword(teacherId: string, currentPassword: 
   return true;
 }
 
+export async function updateTeacherTheme(teacherId: string, theme: Theme): Promise<void> {
+    await delay(100);
+    const teacher = db.teachers.find(t => t.id === teacherId);
+    if(teacher) {
+        teacher.theme = theme;
+    }
+}
+
 
 export async function deleteTeacher(id: string): Promise<void> {
   await delay(300);
@@ -150,7 +161,7 @@ export async function getTeacherByEmail(email: string): Promise<Teacher | null> 
 // Student Services
 export async function addStudent(student: Omit<Student, 'id'>): Promise<Student> {
   await delay(300);
-  const newStudent: Student = { ...student, id: generateId('s') };
+  const newStudent: Student = { ...student, id: generateId('s'), theme: 'default' };
   db.students.push(newStudent);
   return newStudent;
 };
@@ -205,6 +216,14 @@ export async function updateStudentPassword(studentId: string, currentPassword: 
   
   student.password = newPassword;
   return true;
+}
+
+export async function updateStudentTheme(studentId: string, theme: Theme): Promise<void> {
+    await delay(100);
+    const student = db.students.find(s => s.id === studentId);
+    if(student) {
+        student.theme = theme;
+    }
 }
 
 export async function deleteStudent(id: string): Promise<void> {

@@ -3,8 +3,10 @@ import { getStudentByEmail, getTeacherByEmail, Student, Teacher } from "./servic
 
 const SESSION_KEY = "sahayak-session";
 
-type Session = {
-    user: Student | Omit<Teacher, 'password'>;
+type User = Student | Omit<Teacher, 'password'>;
+
+export type Session = {
+    user: User;
     role: 'student' | 'teacher' | 'admin';
 };
 
@@ -18,6 +20,12 @@ export const getSession = (): Session | null => {
         return JSON.parse(sessionData);
     }
     return null;
+};
+
+export const setSession = (session: Session) => {
+    if (typeof window !== 'undefined') {
+        localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    }
 };
 
 // This function can only be called on the client side

@@ -67,6 +67,26 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 207 82% 56%;
   }
+
+  /* Forest Green Theme */
+  .theme-green {
+    --primary: 147 68% 34%;
+    --ring: 147 68% 34%;
+  }
+  .dark .theme-green {
+    --primary: 147 68% 34%;
+    --primary-foreground: 210 40% 98%;
+  }
+
+  /* Royal Purple Theme */
+  .theme-purple {
+    --primary: 262 82% 56%;
+    --ring: 262 82% 56%;
+  }
+  .dark .theme-purple {
+    --primary: 262 82% 56%;
+    --primary-foreground: 210 40% 98%;
+  }
 }
 
 @layer base {
