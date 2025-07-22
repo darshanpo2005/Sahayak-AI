@@ -12,7 +12,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   LogOut,
   Settings,
@@ -22,6 +24,8 @@ import {
   Copy,
   HelpCircle,
   Shield,
+  Bell,
+  Check,
 } from "lucide-react";
 import { logout, getSession } from "@/lib/authService";
 import { useEffect, useState } from "react";
@@ -37,9 +41,14 @@ import {
   SidebarTrigger,
   SidebarInset,
 } from "@/components/ui/sidebar";
+import { getNotificationsForUser, markAllNotificationsAsRead, Notification } from "@/lib/notificationService";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { formatDistanceToNow } from 'date-fns';
+
 
 type Session = {
-  user: { name: string; email: string };
+  user: { id: string, name: string; email: string };
   role: "student" | "teacher" | "admin";
 } | null;
 
@@ -70,10 +79,17 @@ export function DashboardPage({
   const router = useRouter();
   const [session, setSession] = useState<Session>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const fetchNotifications = async (userId: string) => {
+    const notifs = await getNotificationsForUser(userId);
+    setNotifications(notifs);
+    setUnreadCount(notifs.filter(n => !n.read).length);
+  }
 
   useEffect(() => {
     const currentSession = getSession();
-    // Special handling for management role which is just 'admin' in session
     const expectedRole = role.toLowerCase();
     if (!currentSession || currentSession.role !== expectedRole) {
         logout();
@@ -82,6 +98,9 @@ export function DashboardPage({
         if (role === 'Management') router.push('/');
     } else {
         setSession(currentSession as Session);
+        if (currentSession.role !== 'admin') {
+            fetchNotifications(currentSession.user.id);
+        }
     }
     setIsLoading(false);
   }, [role, router]);
@@ -112,7 +131,14 @@ export function DashboardPage({
       }
   }
 
-  if (isLoading || !session) {
+  const handleMarkAllAsRead = async () => {
+    if (session?.user.id) {
+        await markAllNotificationsAsRead(session.user.id);
+        fetchNotifications(session.user.id);
+    }
+  }
+
+  if (isLoading) {
       return (
           <div className="flex justify-center items-center min-h-screen">
               <Loader2 className="h-8 w-8 animate-spin" />
@@ -181,7 +207,47 @@ export function DashboardPage({
               <SidebarTrigger className="md:hidden" />
               <h1 className="text-xl font-bold tracking-tight">{title}</h1>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
+                {role !== 'Management' && (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                           <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                             <Bell className="h-5 w-5" />
+                             {unreadCount > 0 && (
+                                <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center p-0">{unreadCount}</Badge>
+                             )}
+                           </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-80" align="end" forceMount>
+                            <DropdownMenuLabel>
+                                <div className="flex justify-between items-center">
+                                    <span>Notifications</span>
+                                    {unreadCount > 0 && (
+                                        <Button variant="ghost" size="sm" className="h-auto p-1" onClick={handleMarkAllAsRead}>
+                                           <Check className="h-4 w-4 mr-1"/> Mark all as read
+                                        </Button>
+                                    )}
+                                </div>
+                            </DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <ScrollArea className="h-[300px]">
+                                <DropdownMenuGroup>
+                                {notifications.length > 0 ? (
+                                    notifications.map(n => (
+                                        <DropdownMenuItem key={n.id} className={cn("flex-col items-start gap-1 whitespace-normal", !n.read && "bg-accent/50")}>
+                                            <p className="font-medium text-sm text-foreground">{n.message}</p>
+                                            <p className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}</p>
+                                        </DropdownMenuItem>
+                                    ))
+                                ) : (
+                                    <p className="p-4 text-center text-sm text-muted-foreground">No notifications yet.</p>
+                                )}
+                                </DropdownMenuGroup>
+                           </ScrollArea>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )}
+
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -230,3 +296,4 @@ export function DashboardPage({
     </SidebarProvider>
   );
 }
+
