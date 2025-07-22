@@ -7,3 +7,4 @@ import '@/ai/flows/tutor-student.ts';
 import '@/ai/flows/generate-certificate.ts';
 import '@/ai/flows/generate-flashcards.ts';
 import '@/ai/flows/text-to-speech.ts';
+import '@/ai/flows/generate-assignment.ts';

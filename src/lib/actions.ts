@@ -6,8 +6,12 @@ import { generateQuizQuestions, GenerateQuizQuestionsInput, GenerateQuizQuestion
 import { tutorStudent, TutorStudentInput, TutorStudentOutput } from "@/ai/flows/tutor-student";
 import { generateCertificate, GenerateCertificateInput, GenerateCertificateOutput } from "@/ai/flows/generate-certificate";
 import { generateFlashcards, GenerateFlashcardsInput, GenerateFlashcardsOutput } from "@/ai/flows/generate-flashcards";
-import { translateText as translateTextFlow, TranslateTextInput, TranslateTextOutput } from "@/ai/flows/translate-text";
+import { translateText as translateTextFlow } from "@/ai/flows/translate-text";
 import { textToSpeech, TextToSpeechInput, TextToSpeechOutput } from "@/ai/flows/text-to-speech";
+import { generateAssignment, GenerateAssignmentInput, GenerateAssignmentOutput } from "@/ai/flows/generate-assignment";
+
+export type TranslateTextInput = { text: string; targetLanguage: string; };
+export type TranslateTextOutput = { translation: string; };
 
 type LessonPlanResult = {
   success: true;
@@ -64,6 +68,15 @@ type AudioResult = {
   success: false;
   error: string;
 };
+
+type AssignmentResult = {
+  success: true;
+  data: GenerateAssignmentOutput;
+} | {
+  success: false;
+  error: string;
+};
+
 
 export async function getLessonPlan(input: GenerateLessonPlanAssistanceInput): Promise<LessonPlanResult> {
   if (!input.subject || !input.gradeLevel) {
@@ -164,6 +177,20 @@ export async function getAudioForText(input: TextToSpeechInput): Promise<AudioRe
   }
 }
 
+export async function getAssignment(input: GenerateAssignmentInput): Promise<AssignmentResult> {
+  if (!input.subject || !input.assignmentType) {
+    return { success: false, error: "Subject and Assignment Type are required." };
+  }
+
+  try {
+    const result = await generateAssignment(input);
+    return { success: true, data: result };
+  } catch (error) {
+    console.error("Error generating assignment:", error);
+    return { success: false, error: "An unexpected error occurred while generating the assignment." };
+  }
+}
+
 
 // Export types for use in client components
-export type { GenerateLessonPlanAssistanceOutput, GenerateQuizQuestionsOutput, TutorStudentOutput, GenerateCertificateOutput, GenerateFlashcardsOutput };
+export type { GenerateLessonPlanAssistanceOutput, GenerateQuizQuestionsOutput, TutorStudentOutput, GenerateCertificateOutput, GenerateFlashcardsOutput, GenerateAssignmentOutput };

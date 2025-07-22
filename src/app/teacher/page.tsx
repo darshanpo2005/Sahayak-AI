@@ -11,9 +11,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { getLessonPlan, getQuiz } from "@/lib/actions";
-import type { GenerateLessonPlanAssistanceOutput, GenerateQuizQuestionsOutput } from "@/lib/actions";
-import { Lightbulb, HelpCircle, BarChart3, Bot, Sparkles, Loader2, CalendarCheck, CheckCircle2, RefreshCw } from "lucide-react";
+import { getLessonPlan, getQuiz, getAssignment } from "@/lib/actions";
+import type { GenerateLessonPlanAssistanceOutput, GenerateQuizQuestionsOutput, GenerateAssignmentOutput } from "@/lib/actions";
+import { Lightbulb, HelpCircle, BarChart3, Bot, Sparkles, Loader2, CalendarCheck, CheckCircle2, RefreshCw, ClipboardEdit } from "lucide-react";
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
@@ -45,6 +45,10 @@ export default function TeacherPage() {
   const [isQuizLoading, setIsQuizLoading] = useState(false);
   const [quizError, setQuizError] = useState<string | null>(null);
   const [quizCourseId, setQuizCourseId] = useState<string>("");
+
+  const [assignment, setAssignment] = useState<GenerateAssignmentOutput | null>(null);
+  const [isAssignmentLoading, setIsAssignmentLoading] = useState(false);
+  const [assignmentError, setAssignmentError] = useState<string | null>(null);
 
   const [students, setStudents] = useState<Student[]>([]);
   const [isStudentsLoading, setIsStudentsLoading] = useState(true);
@@ -169,6 +173,29 @@ export default function TeacherPage() {
     setIsQuizLoading(false);
   };
   
+  const handleAssignmentSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsAssignmentLoading(true);
+    setAssignment(null);
+    setAssignmentError(null);
+    const formData = new FormData(e.currentTarget);
+    const subject = formData.get("assignmentSubject") as string;
+    const assignmentType = formData.get("assignmentType") as string;
+
+    const result = await getAssignment({ subject, assignmentType });
+    if (result.success) {
+      setAssignment(result.data);
+    } else {
+      setAssignmentError(result.error);
+      toast({
+        variant: "destructive",
+        title: "Assignment Generation Failed",
+        description: result.error,
+      });
+    }
+    setIsAssignmentLoading(false);
+  };
+
   const handleAttendanceSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     toast({
@@ -202,11 +229,12 @@ export default function TeacherPage() {
   return (
     <DashboardPage title="Teacher Dashboard" role="Teacher">
       <Tabs defaultValue="attendance">
-        <TabsList className="mb-6 grid grid-cols-2 sm:grid-cols-4 w-full sm:w-auto">
-          <TabsTrigger value="attendance"><CalendarCheck className="mr-2 h-4 w-4"/>Take Attendance</TabsTrigger>
-          <TabsTrigger value="lesson-plan"><Lightbulb className="mr-2 h-4 w-4" />Lesson Plan AI</TabsTrigger>
-          <TabsTrigger value="quiz"><HelpCircle className="mr-2 h-4 w-4" />Quiz Generator</TabsTrigger>
-          <TabsTrigger value="progress"><BarChart3 className="mr-2 h-4 w-4" />Student Progress</TabsTrigger>
+        <TabsList className="mb-6 grid grid-cols-2 sm:grid-cols-5 w-full sm:w-auto">
+          <TabsTrigger value="attendance"><CalendarCheck className="mr-2 h-4 w-4"/>Attendance</TabsTrigger>
+          <TabsTrigger value="lesson-plan"><Lightbulb className="mr-2 h-4 w-4" />Lesson Plan</TabsTrigger>
+          <TabsTrigger value="assignments"><ClipboardEdit className="mr-2 h-4 w-4" />Assignments</TabsTrigger>
+          <TabsTrigger value="quiz"><HelpCircle className="mr-2 h-4 w-4" />Quiz</TabsTrigger>
+          <TabsTrigger value="progress"><BarChart3 className="mr-2 h-4 w-4" />Progress</TabsTrigger>
         </TabsList>
 
         <TabsContent value="attendance">
@@ -261,7 +289,7 @@ export default function TeacherPage() {
           <div className="grid gap-6 lg:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Request Lesson Plan Assistance</CardTitle>
+                <CardTitle>Lesson Plan Assistance</CardTitle>
                 <CardDescription>Provide a subject and grade level to get an AI-generated lesson plan outline.</CardDescription>
               </CardHeader>
               <form onSubmit={handleLessonPlanSubmit}>
@@ -313,12 +341,83 @@ export default function TeacherPage() {
             </Card>
           </div>
         </TabsContent>
+        
+        <TabsContent value="assignments">
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Assignment Generator</CardTitle>
+                <CardDescription>Generate writing or project-based tasks based on a subject.</CardDescription>
+              </CardHeader>
+              <form onSubmit={handleAssignmentSubmit}>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="assignmentSubject">Subject</Label>
+                    <Input id="assignmentSubject" name="assignmentSubject" placeholder="e.g., Environmental Science" required />
+                  </div>
+                  <div>
+                    <Label htmlFor="assignmentType">Assignment Type</Label>
+                    <Select name="assignmentType" defaultValue="Project Idea" required>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select an assignment type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Project Idea">Project Idea</SelectItem>
+                        <SelectItem value="Essay Prompt">Essay Prompt</SelectItem>
+                        <SelectItem value="Worksheet">Worksheet</SelectItem>
+                        <SelectItem value="Debate Topic">Debate Topic</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button type="submit" disabled={isAssignmentLoading} className="w-full">
+                    {isAssignmentLoading ? (
+                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...</>
+                    ) : (
+                      <><Sparkles className="mr-2 h-4 w-4" /> Generate Assignment</>
+                    )}
+                  </Button>
+                </CardFooter>
+              </form>
+            </Card>
+
+            <Card className="flex flex-col">
+              <CardHeader>
+                <CardTitle className="flex items-center"><Bot className="mr-2 h-5 w-5" /> Generated Assignment</CardTitle>
+                <CardDescription>The generated assignment details will appear here.</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <ScrollArea className="h-[250px] w-full p-4 border rounded-md bg-muted/20">
+                  {isAssignmentLoading && (
+                    <div className="space-y-4">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </div>
+                  )}
+                  {assignmentError && <p className="text-destructive">{assignmentError}</p>}
+                  {assignment ? (
+                    <div className="space-y-2">
+                      <h4 className="font-bold">{assignment.assignmentTitle}</h4>
+                      <pre className="whitespace-pre-wrap font-sans text-sm">{assignment.assignmentDescription}</pre>
+                    </div>
+                  ) : !isAssignmentLoading && !assignmentError && (
+                    <p className="text-muted-foreground">Your generated content will be displayed here.</p>
+                  )}
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
 
         <TabsContent value="quiz">
            <div className="grid gap-6 lg:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Generate Quiz Questions</CardTitle>
+                <CardTitle>Quiz Generator</CardTitle>
                 <CardDescription>Provide a topic and number of questions to generate a quiz.</CardDescription>
               </CardHeader>
               <form onSubmit={handleQuizSubmit}>
