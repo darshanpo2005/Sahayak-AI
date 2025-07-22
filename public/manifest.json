@@ -1,11 +1,11 @@
 {
   "name": "Sahayak AI",
   "short_name": "SahayakAI",
-  "description": "A functional prototype of a multi-user AI assistant for educational purposes, demonstrating distinct access levels and AI-powered assistance.",
+  "description": "Multi-User AI Assistant Prototype for Education.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#e0f2fe",
-  "theme_color": "#3498db",
+  "background_color": "#f0f9ff",
+  "theme_color": "#3b82f6",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",
