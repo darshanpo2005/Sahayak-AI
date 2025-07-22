@@ -147,7 +147,8 @@ export async function getTranslation(input: TranslateTextInput): Promise<Transla
     return { success: true, data: result };
   } catch (error) {
     console.error("Error translating text:", error);
-    return { success: false, error: "An unexpected error occurred during translation." };
+    const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred during translation.";
+    return { success: false, error: errorMessage };
   }
 }
 
