@@ -311,4 +311,3 @@ export async function getLatestQuizResultForStudent(studentId: string, courseId:
         .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
     return studentResultsForCourse[0] || null;
 }
-

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -117,7 +118,8 @@ export default function TeacherPage() {
 
   useEffect(() => {
     fetchProgressData();
-  }, [progressCourseId, toast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [progressCourseId]);
 
   const handleLessonPlanSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
