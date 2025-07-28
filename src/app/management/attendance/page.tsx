@@ -11,7 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, CalendarCheck } from "lucide-react";
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
-import { getStudents, Student, Teacher } from "@/lib/services";
+import { getStudents, Student, Teacher, addOrUpdateAttendance } from "@/lib/services";
+import type { AttendanceStatus } from "@/lib/services";
 import { getSession } from "@/lib/authService";
 
 export default function AttendancePage() {
@@ -20,6 +21,7 @@ export default function AttendancePage() {
   const [session, setSession] = useState<{ user: Teacher; role: 'admin' } | null>(null);
   const [interns, setInterns] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [attendance, setAttendance] = useState<Record<string, AttendanceStatus>>({});
 
   useEffect(() => {
     const currentSession = getSession();
@@ -36,6 +38,12 @@ export default function AttendancePage() {
       try {
         const internsData = await getStudents();
         setInterns(internsData);
+        // Initialize attendance state
+        const initialAttendance: Record<string, AttendanceStatus> = {};
+        internsData.forEach(intern => {
+          initialAttendance[intern.id] = 'Present';
+        });
+        setAttendance(initialAttendance);
       } catch (error) {
         toast({
           variant: "destructive",
@@ -51,14 +59,34 @@ export default function AttendancePage() {
     }
   }, [session, toast]);
 
-  const handleAttendanceSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleAttendanceChange = (internId: string, status: AttendanceStatus) => {
+    setAttendance(prev => ({ ...prev, [internId]: status }));
+  };
+
+  const handleAttendanceSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // In a real application, you would save this data.
-    // For now, we just show a confirmation.
-    toast({
-      title: "Attendance Submitted",
-      description: "Today's attendance has been successfully recorded.",
-    });
+    setIsLoading(true);
+
+    const recordsToSave = Object.entries(attendance).map(([studentId, status]) => ({
+      studentId,
+      status,
+    }));
+
+    try {
+      await addOrUpdateAttendance(recordsToSave);
+      toast({
+        title: "Attendance Submitted",
+        description: "Today's attendance has been successfully recorded.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to save attendance records.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!session) {
@@ -102,18 +130,22 @@ export default function AttendancePage() {
                     <TableRow key={intern.id}>
                       <TableCell className="font-medium">{intern.name}</TableCell>
                       <TableCell className="text-right">
-                        <RadioGroup defaultValue="present" name={`attendance-${intern.name}`} className="justify-end gap-4 sm:gap-6 flex flex-row">
+                        <RadioGroup 
+                          value={attendance[intern.id] || 'Present'} 
+                          onValueChange={(value) => handleAttendanceChange(intern.id, value as AttendanceStatus)}
+                          className="justify-end gap-4 sm:gap-6 flex flex-row"
+                        >
                           <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="present" id={`${intern.name}-present`} />
-                            <Label htmlFor={`${intern.name}-present`}>Present</Label>
+                            <RadioGroupItem value="Present" id={`${intern.id}-present`} />
+                            <Label htmlFor={`${intern.id}-present`}>Present</Label>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="absent" id={`${intern.name}-absent`} />
-                            <Label htmlFor={`${intern.name}-absent`}>Absent</Label>
+                            <RadioGroupItem value="Absent" id={`${intern.id}-absent`} />
+                            <Label htmlFor={`${intern.id}-absent`}>Absent</Label>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="late" id={`${intern.name}-late`} />
-                            <Label htmlFor={`${intern.name}-late`}>Late</Label>
+                            <RadioGroupItem value="Late" id={`${intern.id}-late`} />
+                            <Label htmlFor={`${intern.id}-late`}>Late</Label>
                           </div>
                         </RadioGroup>
                       </TableCell>

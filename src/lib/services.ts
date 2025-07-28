@@ -33,6 +33,15 @@ export interface Course {
   teacherId: string; // Used as "ManagerId" for resources
 }
 
+export type AttendanceStatus = 'Present' | 'Absent' | 'Late';
+
+export interface AttendanceRecord {
+  id: string;
+  studentId: string;
+  date: string; // YYYY-MM-DD
+  status: AttendanceStatus;
+}
+
 export interface QuizResult {
   id:string;
   studentId: string;
@@ -50,6 +59,7 @@ interface MockDB {
   students: Student[]; // Interns
   courses: Course[]; // Resources
   quizResults: QuizResult[];
+  attendance: AttendanceRecord[];
 }
 
 // Use a global singleton to persist data across hot reloads in development
@@ -82,6 +92,7 @@ const db = globalForDb.db ?? {
     },
   ],
   quizResults: [],
+  attendance: [],
 };
 
 if (process.env.NODE_ENV !== 'production') globalForDb.db = db;
@@ -283,7 +294,7 @@ export async function deleteCourse(id: string): Promise<void> {
   db.courses = db.courses.filter(c => c.id !== id);
 };
 
-// Quiz Result Services (can be repurposed for attendance/leaderboard later)
+// Quiz Result Services
 export async function submitQuizResult(result: Omit<QuizResult, 'id' | 'submittedAt' | 'graded'>): Promise<void> {
   await delay(100);
   const newResult: QuizResult = {
@@ -321,4 +332,37 @@ export async function getLatestQuizResultForStudent(studentId: string, courseId:
         .filter(r => r.studentId === studentId && r.courseId === courseId)
         .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
     return studentResultsForCourse[0] || null;
+}
+
+// Attendance Services
+export async function addOrUpdateAttendance(records: { studentId: string; status: AttendanceStatus }[]): Promise<void> {
+  await delay(200);
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+  records.forEach(record => {
+    const existingRecordIndex = db.attendance.findIndex(
+      a => a.studentId === record.studentId && a.date === today
+    );
+
+    if (existingRecordIndex > -1) {
+      // Update existing record for today
+      db.attendance[existingRecordIndex].status = record.status;
+    } else {
+      // Add new record
+      const newRecord: AttendanceRecord = {
+        id: generateId('att'),
+        studentId: record.studentId,
+        date: today,
+        status: record.status,
+      };
+      db.attendance.push(newRecord);
+    }
+  });
+}
+
+export async function getAttendanceForStudent(studentId: string): Promise<AttendanceRecord[]> {
+  await delay(150);
+  return db.attendance
+    .filter(a => a.studentId === studentId)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }

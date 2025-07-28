@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
 import { getTutorResponse, getCertificate, getAudioForText } from "@/lib/actions";
-import { getCourses, Course, Student, notifyManagerOfQuestion } from "@/lib/services";
+import { getCourses, Course, Student, notifyManagerOfQuestion, getAttendanceForStudent, AttendanceRecord } from "@/lib/services";
 import { useToast } from "@/hooks/use-toast";
 import { getSession } from "@/lib/authService";
 import Link from "next/link";
@@ -42,6 +42,8 @@ export default function InternPage() {
   const [activeResourceTopic, setActiveResourceTopic] = useState("your resources");
   const [isGeneratingCert, setIsGeneratingCert] = useState<string | null>(null);
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
+  const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+  const [isLoadingAttendance, setIsLoadingAttendance] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -54,36 +56,41 @@ export default function InternPage() {
   }, [router]);
 
   useEffect(() => {
-    const fetchResources = async () => {
+    const fetchInitialData = async () => {
+      if (!session) return;
+
       setIsLoadingResources(true);
+      setIsLoadingAttendance(true);
+
       try {
-        const resourcesData = await getCourses();
+        const [resourcesData, attendanceData] = await Promise.all([
+          getCourses(),
+          getAttendanceForStudent(session.user.id),
+        ]);
+        
         setResources(resourcesData);
         if (resourcesData.length > 0) {
             setActiveResourceTopic(resourcesData[0].title); 
         }
+
+        setAttendance(attendanceData);
+
       } catch (error) {
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Failed to load resources.",
+          description: "Failed to load dashboard data.",
         });
       } finally {
         setIsLoadingResources(false);
+        setIsLoadingAttendance(false);
       }
     };
-    fetchResources();
-  }, [toast]);
+    if(session) {
+      fetchInitialData();
+    }
+  }, [session, toast]);
   
-
-  const attendance = [
-    { date: "2024-07-22", status: "Present" },
-    { date: "2024-07-21", status: "Present" },
-    { date: "2024-07-20", status: "Absent" },
-    { date: "2024-07-19", status: "Present" },
-    { date: "2024-07-18", status: "Late" },
-  ];
-
   const handleAudioEnded = () => {
     setChatHistory(prev => prev.map(msg => ({ ...msg, isPlaying: false })));
   };
@@ -231,7 +238,7 @@ export default function InternPage() {
           <Card>
             <CardHeader>
               <CardTitle>My Attendance</CardTitle>
-              <CardDescription>Here is a summary of your attendance record. (Simulated)</CardDescription>
+              <CardDescription>Here is a summary of your attendance record.</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
@@ -242,16 +249,30 @@ export default function InternPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {attendance.map((record) => (
-                    <TableRow key={record.date}>
-                      <TableCell className="font-medium">{record.date}</TableCell>
-                      <TableCell className="text-right">
-                        <Badge variant={record.status === "Present" ? "secondary" : record.status === "Absent" ? "destructive" : "default"}>
-                          {record.status}
-                        </Badge>
+                  {isLoadingAttendance ? (
+                     <TableRow>
+                        <TableCell colSpan={2} className="text-center">
+                           <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                        </TableCell>
+                      </TableRow>
+                  ) : attendance.length > 0 ? (
+                    attendance.map((record) => (
+                      <TableRow key={record.id}>
+                        <TableCell className="font-medium">{new Date(record.date).toLocaleDateString()}</TableCell>
+                        <TableCell className="text-right">
+                          <Badge variant={record.status === "Present" ? "secondary" : record.status === "Absent" ? "destructive" : "default"}>
+                            {record.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                     <TableRow>
+                      <TableCell colSpan={2} className="text-center text-muted-foreground">
+                        No attendance records found.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
