@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -21,12 +21,18 @@ import {
   User,
   Loader2,
   LayoutDashboard,
-  Copy,
-  HelpCircle,
   Shield,
   Bell,
   Check,
   GraduationCap,
+  BookOpen,
+  CalendarCheck,
+  MessageSquare,
+  Map,
+  ClipboardEdit,
+  HelpCircle,
+  BarChart3,
+  BookCheck as GradingIcon,
 } from "lucide-react";
 import { logout, getSession } from "@/lib/authService";
 import { useEffect, useState } from "react";
@@ -56,12 +62,14 @@ type Session = {
 
 const internNavItems = [
   { href: "/student", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/student/schedule", icon: Copy, label: "Schedule" },
-  { href: "/student/resources", icon: HelpCircle, label: "Resources" },
+  { href: "/student/quiz", icon: HelpCircle, label: "Quizzes" },
+  { href: "/student/flashcards", icon: ClipboardEdit, label: "Flashcards" },
 ];
 
 const managerNavItems = [
     { href: "/management", icon: LayoutDashboard, label: "Dashboard" },
+    { href: "/teacher", icon: ClipboardEdit, label: "AI Tools" },
+    { href: "/teacher/grading", icon: GradingIcon, label: "Grading Center" },
 ];
 
 
@@ -88,19 +96,9 @@ export function DashboardPage({
 
   useEffect(() => {
     const currentSession = getSession();
-    let expectedRole = role.toLowerCase();
-    if(expectedRole === 'manager') expectedRole = 'admin';
-    if(expectedRole === 'intern') expectedRole = 'student';
-
-    if (!currentSession || currentSession.role !== expectedRole) {
-        logout();
-        if (role === 'Intern') router.push('/student/login');
-        if (role === 'Manager') router.push('/');
-    } else {
-        setSession(currentSession as Session);
-        if (currentSession.role !== 'admin') {
-            fetchNotifications(currentSession.user.id);
-        }
+    setSession(currentSession as Session);
+    if (currentSession?.role !== 'admin' && currentSession?.user?.id) {
+        fetchNotifications(currentSession.user.id);
     }
     setIsLoading(false);
   }, [role, router]);
@@ -112,11 +110,13 @@ export function DashboardPage({
   
   const getProfileLink = () => {
     if (role === "Intern") return "/profile/student";
+    if (role === "Manager") return "/profile/teacher";
     return "#";
   }
 
   const getSettingsLink = () => {
     if (role === "Intern") return "/settings/student";
+    if (role === "Manager") return "/settings/teacher";
     return "#";
   }
 
@@ -174,7 +174,6 @@ export function DashboardPage({
         </SidebarContent>
         <SidebarFooter>
            <SidebarMenu>
-            {role !== 'Manager' && (
                <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Profile">
                     <Link href={getProfileLink()}>
@@ -183,8 +182,6 @@ export function DashboardPage({
                     </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-            )}
-             {role !== 'Manager' && (
                <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Settings">
                     <Link href={getSettingsLink()}>
@@ -193,7 +190,6 @@ export function DashboardPage({
                     </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-            )}
             <SidebarMenuItem>
                 <SidebarMenuButton onClick={handleLogout} tooltip="Logout">
                     <LogOut />
@@ -272,17 +268,13 @@ export function DashboardPage({
                       )}
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                     {role !== 'Manager' && (
                        <DropdownMenuItem asChild>
                          <Link href={getProfileLink()}><User className="mr-2 h-4 w-4" />Profile</Link>
                        </DropdownMenuItem>
-                     )}
-                     {role !== 'Manager' && (
                         <DropdownMenuItem asChild>
                            <Link href={getSettingsLink()}><Settings className="mr-2 h-4 w-4" />Settings</Link>
                         </DropdownMenuItem>
-                     )}
-                    {role !== 'Manager' && <DropdownMenuSeparator />}
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout}>
                        <LogOut className="mr-2 h-4 w-4" />Logout
                     </DropdownMenuItem>

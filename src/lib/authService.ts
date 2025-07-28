@@ -10,55 +10,61 @@ export type Session = {
     role: 'student' | 'admin';
 };
 
+// Mock admin user for direct access
+const mockAdmin: Omit<Teacher, 'password'> = {
+    id: 't1',
+    name: 'Manager',
+    email: 'manager@bel.com',
+    role: 'admin',
+    theme: 'default',
+};
+
+// Mock student user for direct access
+const mockStudent: Student = {
+    id: 's1',
+    name: 'Intern',
+    email: 'intern@bel.com',
+    grade: 'Networking',
+    teacherId: 't1',
+    theme: 'default',
+};
+
+
 // This function can only be called on the client side
 export const getSession = (): Session | null => {
     if (typeof window === 'undefined') {
-        return null;
+        return { user: mockAdmin, role: 'admin' }; // Default to admin for server-side rendering
     }
-    const sessionData = localStorage.getItem(SESSION_KEY);
-    if (sessionData) {
-        return JSON.parse(sessionData);
+    
+    // For client-side access, determine role by path
+    if(window.location.pathname.startsWith('/student')) {
+        return { user: mockStudent, role: 'student' };
     }
-    return null;
+    
+    if(window.location.pathname.startsWith('/management')) {
+        return { user: mockAdmin, role: 'admin' };
+    }
+    
+    // Fallback for other pages, can be adjusted
+    return { user: mockAdmin, role: 'admin' };
 };
 
 export const setSession = (session: Session) => {
-    if (typeof window !== 'undefined') {
-        localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-    }
+    // No-op when login is disabled
 };
 
-// This function can only be called on the client side
 export const logout = () => {
+    // No-op when login is disabled
     if (typeof window !== 'undefined') {
-        localStorage.removeItem(SESSION_KEY);
+        window.location.href = '/';
     }
 };
 
+// Functions below are disabled for direct access mode.
 export const loginStudent = async (email: string, password: string):Promise<Student | null> => {
-    const student = await getStudentByEmail(email);
-    // Simplified check
-    if (student && student.password === password) {
-        const sessionData: Session = { user: student, role: 'student' };
-        setSession(sessionData);
-        return student;
-    }
-    return null;
-}
-
-// Deprecated, use loginAdmin for managers
-export const loginTeacher = async (email: string, password: string): Promise<Omit<Teacher, 'password'> | null> => {
-    return null;
+    return mockStudent;
 }
 
 export const loginAdmin = async (email: string, password: string): Promise<Omit<Teacher, 'password'> | null> => {
-    const admin = await getTeacherByEmail(email);
-    // Simplified check for admin/manager login
-    if (admin && admin.password === password) {
-        const { password: _, ...adminData } = admin;
-        const sessionData: Session = { user: adminData, role: 'admin' };
-        setSession(sessionData);
-        return adminData;
-    }
-    return null;
+    return mockAdmin;
 }
