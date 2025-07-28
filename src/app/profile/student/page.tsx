@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react";
@@ -10,7 +11,7 @@ import { Table, TableBody, TableCell, TableRow, TableHead, TableHeader } from "@
 import { BookOpen, User, Loader2 } from "lucide-react";
 import { getCoursesForStudent, getTeacherById, Course, Student, Teacher } from "@/lib/services";
 import { useToast } from "@/hooks/use-toast";
-import { getSession } from "@/lib/authService";
+import { getSession } from "@/lib/clientAuth";
 
 export default function StudentProfilePage() {
   const { toast } = useToast();

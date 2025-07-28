@@ -3,9 +3,11 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { getSession } from '@/lib/authService';
+import { getSession } from '@/lib/clientAuth';
 import { cn } from '@/lib/utils';
-import type { Theme } from '@/lib/services';
+import type { Student, Teacher } from '@/lib/services';
+
+type Theme = 'default' | 'green' | 'purple';
 
 export function ClientSessionProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>('default');
@@ -13,7 +15,8 @@ export function ClientSessionProvider({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     const session = getSession();
-    const userTheme = session?.user?.theme || 'default';
+    const user = session?.user as (Student | Omit<Teacher, "password"> | undefined);
+    const userTheme = user?.theme || 'default';
     setTheme(userTheme);
   }, [pathname]); // Rerun on path change to get session theme
 

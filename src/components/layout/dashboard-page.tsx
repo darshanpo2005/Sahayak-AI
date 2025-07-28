@@ -35,7 +35,7 @@ import {
   BookCheck as GradingIcon,
   Sparkles,
 } from "lucide-react";
-import { logout, getSession } from "@/lib/authService";
+import { getSession, logout } from "@/lib/clientAuth";
 import { useEffect, useState } from "react";
 import {
   SidebarProvider,

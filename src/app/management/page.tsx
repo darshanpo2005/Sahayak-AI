@@ -35,7 +35,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { getSession } from "@/lib/authService";
+import { getSession } from "@/lib/clientAuth";
 
 
 type DeletionTarget = { type: 'manager' | 'intern' | 'resource', id: string, name: string } | null;

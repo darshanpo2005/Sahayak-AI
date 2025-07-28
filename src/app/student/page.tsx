@@ -17,7 +17,7 @@ import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@
 import { getTutorResponse, getCertificate, getAudioForText } from "@/lib/actions";
 import { getCoursesForStudent, Course, Student, notifyManagerOfQuestion, getAttendanceForStudent, AttendanceRecord } from "@/lib/services";
 import { useToast } from "@/hooks/use-toast";
-import { getSession } from "@/lib/authService";
+import { getSession } from "@/lib/clientAuth";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import Image from "next/image";

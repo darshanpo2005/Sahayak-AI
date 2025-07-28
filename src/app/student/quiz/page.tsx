@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { getCourses, Course, Student, submitQuizResult } from "@/lib/services";
-import { getSession } from "@/lib/authService";
+import { getSession } from "@/lib/clientAuth";
 import { GenerateQuizQuestionsOutput } from "@/lib/actions";
 import { Loader2, HelpCircle, CheckCircle, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";

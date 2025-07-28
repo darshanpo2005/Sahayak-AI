@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { loginStudent } from "@/lib/authService";
+import { setSession } from "@/lib/clientAuth";
 import { Loader2, GraduationCap } from "lucide-react";
 import Link from "next/link";
 
@@ -32,6 +33,7 @@ export default function StudentLoginPage() {
     try {
       const student = await loginStudent(email, password);
       if (student) {
+        setSession({ user: student, role: 'student', theme: student.theme || 'default' });
         toast({
           title: "Login Successful",
           description: "Redirecting to your dashboard...",

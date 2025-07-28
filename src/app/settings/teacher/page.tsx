@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -11,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Bell, Lock, Palette, Moon, Sun, Monitor, Loader2 } from "lucide-react";
 import { useTheme } from "next-themes";
-import { getSession, setSession as setAuthSession } from "@/lib/authService";
+import { getSession, setSession as setAuthSession } from "@/lib/clientAuth";
 import { updateTeacherPassword, updateTeacherTheme } from "@/lib/services";
 import type { Teacher, Theme } from "@/lib/services";
 import { cn } from "@/lib/utils";

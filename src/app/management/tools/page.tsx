@@ -18,7 +18,7 @@ import { Lightbulb, HelpCircle, BarChart3, Bot, Sparkles, Loader2, CheckCircle2,
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { useToast } from "@/hooks/use-toast";
 import { getStudents, Student, Teacher, getCourses, Course, QuizResult, getQuizResultsForCourse } from "@/lib/services";
-import { getSession } from "@/lib/authService";
+import { getSession } from "@/lib/clientAuth";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StudentProgressChart } from "@/components/analytics/student-progress-chart";

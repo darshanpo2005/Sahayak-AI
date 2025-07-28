@@ -7,7 +7,7 @@ import { DashboardPage } from "@/components/layout/dashboard-page";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { getSession } from "@/lib/authService";
+import { getSession } from "@/lib/clientAuth";
 import {
   getStudentsForTeacher,
   getCoursesForTeacher,

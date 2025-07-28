@@ -13,7 +13,7 @@ import { DashboardPage } from "@/components/layout/dashboard-page";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
 import { getStudentsForTeacher, Student, Teacher, addOrUpdateAttendance } from "@/lib/services";
 import type { AttendanceStatus } from "@/lib/services";
-import { getSession } from "@/lib/authService";
+import { getSession } from "@/lib/clientAuth";
 
 export default function AttendancePage() {
   const { toast } = useToast();

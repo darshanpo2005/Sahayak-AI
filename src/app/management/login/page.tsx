@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { loginAdmin } from "@/lib/authService";
+import { setSession } from "@/lib/clientAuth";
 import { Loader2, Shield } from "lucide-react";
 import Link from "next/link";
 
@@ -32,6 +33,7 @@ export default function ManagementLoginPage() {
     try {
       const admin = await loginAdmin(email, password);
       if (admin) {
+        setSession({ user: admin, role: 'admin', theme: admin.theme || 'default' });
         toast({
           title: "Login Successful",
           description: "Redirecting to management dashboard...",
