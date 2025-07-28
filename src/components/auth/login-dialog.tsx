@@ -81,7 +81,7 @@ export function ManagementLoginDialog({ open, onOpenChange }: ManagementLoginDia
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="col-span-3"
-                placeholder="manager@bel.com"
+                placeholder="admin@bel.com"
                 required
                 disabled={isLoading}
               />
