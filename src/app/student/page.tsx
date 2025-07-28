@@ -283,7 +283,7 @@ export default function InternPage() {
           <Card className="h-[600px] flex flex-col">
             <CardHeader>
               <CardTitle>Submit Query to Manager</CardTitle>
-              <CardDescription>Get help with your internship. A manager will be notified of your question.</CardDescription>
+              <CardDescription>Get help with your internship. Your manager will be notified of your question.</CardDescription>
             </CardHeader>
             <CardContent className="flex-grow overflow-hidden">
                 <ScrollArea className="h-full pr-4">

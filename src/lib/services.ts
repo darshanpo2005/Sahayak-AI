@@ -68,7 +68,6 @@ const globalForDb = globalThis as unknown as { db: MockDB | undefined };
 const db = globalForDb.db ?? {
   teachers: [ // Managers
     { id: 't1', name: 'Manager', email: 'manager@bel.com', password: 'Manager@NWCS', role: 'admin' },
-    { id: 't2', name: 'Johnathan Chen', email: 'j.chen@bel.com', password: 'password123', role: 'admin' },
   ],
   students: [ // Interns
     { id: 's1', name: 'Alex Doe', grade: 'Networking', teacherId: 't1', email: 'intern@bel.com', password: 'Intern@NWCS', theme: 'default' },
@@ -250,8 +249,8 @@ export async function notifyManagerOfQuestion(studentId: string, question: strin
 
   await createNotification({
     userId: student.teacherId, // Manager's ID
-    message: `${student.name} submitted a query about "${courseTopic}": "${question.substring(0, 50)}${question.length > 50 ? '...' : ''}"`,
-    link: '/management',
+    message: `${student.name} asked about "${courseTopic}": "${question.substring(0, 50)}${question.length > 50 ? '...' : ''}"`,
+    link: '/management', // Link to the main dashboard
   });
 }
 

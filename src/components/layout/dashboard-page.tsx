@@ -98,9 +98,13 @@ export function DashboardPage({
 
   useEffect(() => {
     const currentSession = getSession();
-    setSession(currentSession as Session);
-    if (currentSession?.role !== 'admin' && currentSession?.user?.id) {
+    if (currentSession?.user?.id) {
+        setSession(currentSession as Session);
         fetchNotifications(currentSession.user.id);
+    } else if (role === 'Manager' && !currentSession) {
+        router.push('/management/login');
+    } else if (role === 'Intern' && !currentSession) {
+        router.push('/student/login');
     }
     setIsLoading(false);
   }, [role, router]);
@@ -143,7 +147,7 @@ export function DashboardPage({
     }
   }
 
-  if (isLoading) {
+  if (isLoading || !session) {
       return (
           <div className="flex justify-center items-center min-h-screen">
               <Loader2 className="h-8 w-8 animate-spin" />
@@ -209,45 +213,43 @@ export function DashboardPage({
               <h1 className="text-xl font-bold tracking-tight">{title}</h1>
             </div>
             <div className="flex items-center gap-4">
-                {role !== 'Manager' && (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                           <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                             <Bell className="h-5 w-5" />
-                             {unreadCount > 0 && (
-                                <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center p-0">{unreadCount}</Badge>
-                             )}
-                           </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-80" align="end" forceMount>
-                            <DropdownMenuLabel>
-                                <div className="flex justify-between items-center">
-                                    <span>Notifications</span>
-                                    {unreadCount > 0 && (
-                                        <Button variant="ghost" size="sm" className="h-auto p-1" onClick={handleMarkAllAsRead}>
-                                           <Check className="h-4 w-4 mr-1"/> Mark all as read
-                                        </Button>
-                                    )}
-                                </div>
-                            </DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <ScrollArea className="h-[300px]">
-                                <DropdownMenuGroup>
-                                {notifications.length > 0 ? (
-                                    notifications.map(n => (
-                                        <DropdownMenuItem key={n.id} className={cn("flex-col items-start gap-1 whitespace-normal cursor-pointer", !n.read && "bg-accent/50")} onClick={() => handleNotificationClick(n)}>
-                                            <p className="font-medium text-sm text-foreground">{n.message}</p>
-                                            <p className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}</p>
-                                        </DropdownMenuItem>
-                                    ))
-                                ) : (
-                                    <p className="p-4 text-center text-sm text-muted-foreground">No notifications yet.</p>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                       <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                         <Bell className="h-5 w-5" />
+                         {unreadCount > 0 && (
+                            <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center p-0">{unreadCount}</Badge>
+                         )}
+                       </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-80" align="end" forceMount>
+                        <DropdownMenuLabel>
+                            <div className="flex justify-between items-center">
+                                <span>Notifications</span>
+                                {unreadCount > 0 && (
+                                    <Button variant="ghost" size="sm" className="h-auto p-1" onClick={handleMarkAllAsRead}>
+                                       <Check className="h-4 w-4 mr-1"/> Mark all as read
+                                    </Button>
                                 )}
-                                </DropdownMenuGroup>
-                           </ScrollArea>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                )}
+                            </div>
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <ScrollArea className="h-[300px]">
+                            <DropdownMenuGroup>
+                            {notifications.length > 0 ? (
+                                notifications.map(n => (
+                                    <DropdownMenuItem key={n.id} className={cn("flex-col items-start gap-1 whitespace-normal cursor-pointer", !n.read && "bg-accent/50")} onClick={() => handleNotificationClick(n)}>
+                                        <p className="font-medium text-sm text-foreground">{n.message}</p>
+                                        <p className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}</p>
+                                    </DropdownMenuItem>
+                                ))
+                            ) : (
+                                <p className="p-4 text-center text-sm text-muted-foreground">No notifications yet.</p>
+                            )}
+                            </DropdownMenuGroup>
+                       </ScrollArea>
+                    </DropdownMenuContent>
+                </DropdownMenu>
 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
