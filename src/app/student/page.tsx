@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
 import { getTutorResponse, getCertificate, getAudioForText } from "@/lib/actions";
-import { getCourses, Course, Student, notifyManagerOfQuestion, getAttendanceForStudent, AttendanceRecord } from "@/lib/services";
+import { getCoursesForStudent, Course, Student, notifyManagerOfQuestion, getAttendanceForStudent, AttendanceRecord } from "@/lib/services";
 import { useToast } from "@/hooks/use-toast";
 import { getSession } from "@/lib/authService";
 import Link from "next/link";
@@ -64,7 +64,7 @@ export default function InternPage() {
 
       try {
         const [resourcesData, attendanceData] = await Promise.all([
-          getCourses(),
+          getCoursesForStudent(session.user.id),
           getAttendanceForStudent(session.user.id),
         ]);
         
