@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Book, MessageSquare, Send, Bot, Loader2, CalendarCheck, Film, Award, Copy, Volume2, Play, Pause } from "lucide-react";
+import { Book, MessageSquare, Send, Bot, Loader2, CalendarCheck, Film, Award, Copy, Volume2, Play, Pause, Map } from "lucide-react";
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getSession } from "@/lib/authService";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 
 type ChatMessage = {
@@ -29,16 +30,16 @@ type ChatMessage = {
   isPlaying?: boolean;
 };
 
-export default function StudentPage() {
+export default function InternPage() {
   const { toast } = useToast();
   const router = useRouter();
   const [session, setSession] = useState<{ user: Student; role: 'student' } | null>(null);
   const [question, setQuestion] = useState("");
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [isAnswering, setIsAnswering] = useState(false);
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [isLoadingCourses, setIsLoadingCourses] = useState(true);
-  const [activeCourseTopic, setActiveCourseTopic] = useState("your course");
+  const [resources, setResources] = useState<Course[]>([]);
+  const [isLoadingResources, setIsLoadingResources] = useState(true);
+  const [activeResourceTopic, setActiveResourceTopic] = useState("your resources");
   const [isGeneratingCert, setIsGeneratingCert] = useState<string | null>(null);
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -53,25 +54,25 @@ export default function StudentPage() {
   }, [router]);
 
   useEffect(() => {
-    const fetchCourses = async () => {
-      setIsLoadingCourses(true);
+    const fetchResources = async () => {
+      setIsLoadingResources(true);
       try {
-        const coursesData = await getCourses();
-        setCourses(coursesData);
-        if (coursesData.length > 0) {
-            setActiveCourseTopic(coursesData[0].title); 
+        const resourcesData = await getCourses();
+        setResources(resourcesData);
+        if (resourcesData.length > 0) {
+            setActiveResourceTopic(resourcesData[0].title); 
         }
       } catch (error) {
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Failed to load courses.",
+          description: "Failed to load resources.",
         });
       } finally {
-        setIsLoadingCourses(false);
+        setIsLoadingResources(false);
       }
     };
-    fetchCourses();
+    fetchResources();
   }, [toast]);
   
 
@@ -123,12 +124,12 @@ export default function StudentPage() {
     setQuestion("");
     setIsAnswering(true);
 
-    // Notify teacher in the background
-    notifyTeacherOfQuestion(session.user.id, currentQuestion, activeCourseTopic);
+    // Notify manager in the background
+    notifyTeacherOfQuestion(session.user.id, currentQuestion, activeResourceTopic);
 
     const result = await getTutorResponse({
       question: currentQuestion,
-      topic: activeCourseTopic,
+      topic: activeResourceTopic,
       history: chatHistory,
     });
 
@@ -159,29 +160,6 @@ export default function StudentPage() {
     }
   };
 
-  const handleGenerateCertificate = async (courseName: string) => {
-    if (!session) return;
-    setIsGeneratingCert(courseName);
-    const result = await getCertificate({
-      studentName: session.user.name,
-      courseName: courseName,
-      date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-    });
-    
-    if (result.success) {
-      const newWindow = window.open();
-      newWindow?.document.write(result.data.certificateHtml);
-      newWindow?.document.close();
-    } else {
-       toast({
-        variant: "destructive",
-        title: "Certificate Generation Failed",
-        description: result.error,
-      });
-    }
-    setIsGeneratingCert(null);
-  }
-  
   if (!session) {
     return (
        <div className="flex justify-center items-center min-h-screen">
@@ -191,40 +169,40 @@ export default function StudentPage() {
   }
 
   return (
-    <DashboardPage title="Student Dashboard" role="Student">
-      <Tabs defaultValue="courses">
+    <DashboardPage title="Intern Dashboard" role="Intern">
+      <Tabs defaultValue="resources">
         <TabsList className="mb-6 grid grid-cols-2 sm:grid-cols-4 w-full sm:w-auto">
-          <TabsTrigger value="courses"><Book className="mr-2 h-4 w-4" />My Courses</TabsTrigger>
-          <TabsTrigger value="flashcards"><Copy className="mr-2 h-4 w-4" />Flashcards</TabsTrigger>
+          <TabsTrigger value="resources"><Book className="mr-2 h-4 w-4" />Resources</TabsTrigger>
           <TabsTrigger value="attendance"><CalendarCheck className="mr-2 h-4 w-4" />Attendance</TabsTrigger>
-          <TabsTrigger value="qna"><MessageSquare className="mr-2 h-4 w-4" />AI Tutor</TabsTrigger>
+          <TabsTrigger value="queries"><MessageSquare className="mr-2 h-4 w-4" />Submit Query</TabsTrigger>
+          <TabsTrigger value="map"><Map className="mr-2 h-4 w-4" />Campus Map</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="courses">
+        <TabsContent value="resources">
           <Card>
             <CardHeader>
-              <CardTitle>My Courses</CardTitle>
-              <CardDescription>Access your enrolled courses, modules, and video lectures here.</CardDescription>
+              <CardTitle>My Resources</CardTitle>
+              <CardDescription>Access your internship resources, documents, and videos here.</CardDescription>
             </CardHeader>
             <CardContent>
-              {isLoadingCourses ? (
+              {isLoadingResources ? (
                 <div className="flex justify-center items-center h-40">
                   <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
               ) : (
                 <Accordion type="single" collapsible className="w-full" onValueChange={(value) => {
-                    const selectedCourse = courses.find(c => c.id === value);
-                    if (selectedCourse) {
-                      setActiveCourseTopic(selectedCourse.title);
+                    const selectedResource = resources.find(c => c.id === value);
+                    if (selectedResource) {
+                      setActiveResourceTopic(selectedResource.title);
                     }
                 }}>
-                  {courses.map((course) => (
-                    <AccordionItem value={course.id!} key={course.id}>
-                      <AccordionTrigger className="text-lg font-medium">{course.title}</AccordionTrigger>
+                  {resources.map((resource) => (
+                    <AccordionItem value={resource.id!} key={resource.id}>
+                      <AccordionTrigger className="text-lg font-medium">{resource.title}</AccordionTrigger>
                       <AccordionContent>
                         <div className="space-y-4">
-                           <p className="text-muted-foreground mb-4">{course.description}</p>
-                          {course.modules.map((module, moduleIndex) => (
+                           <p className="text-muted-foreground mb-4">{resource.description}</p>
+                          {resource.modules.map((module, moduleIndex) => (
                               <Card key={moduleIndex}>
                                  <CardHeader>
                                       <CardTitle className="text-base flex items-center gap-2">
@@ -234,47 +212,17 @@ export default function StudentPage() {
                                  </CardHeader>
                                  <CardContent>
                                       <div className="aspect-video bg-muted rounded-md flex items-center justify-center">
-                                         <p className="text-muted-foreground">Video player placeholder</p>
+                                         <p className="text-muted-foreground">Content placeholder</p>
                                       </div>
                                  </CardContent>
                               </Card>
                           ))}
-                          <div className="pt-4 flex justify-end">
-                            <Button
-                              onClick={() => handleGenerateCertificate(course.title)}
-                              disabled={isGeneratingCert === course.title}
-                            >
-                              {isGeneratingCert === course.title ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              ) : (
-                                <Award className="mr-2 h-4 w-4" />
-                              )}
-                              Generate Certificate
-                            </Button>
-                          </div>
                         </div>
                       </AccordionContent>
                     </AccordionItem>
                   ))}
                 </Accordion>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="flashcards">
-          <Card>
-            <CardHeader>
-              <CardTitle>AI Flashcard Generator</CardTitle>
-              <CardDescription>
-                Create flashcards for any topic to help you study.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center justify-center text-center h-64">
-                <p className="mb-4 text-muted-foreground">This powerful study tool is just one click away.</p>
-                <Button asChild>
-                  <Link href="/student/flashcards">Go to Flashcard Generator</Link>
-                </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -310,11 +258,11 @@ export default function StudentPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="qna">
+        <TabsContent value="queries">
           <Card className="h-[600px] flex flex-col">
             <CardHeader>
-              <CardTitle>AI Tutor</CardTitle>
-              <CardDescription>Get help with your course content. Currently selected: <span className="font-semibold text-primary">{activeCourseTopic}</span></CardDescription>
+              <CardTitle>Submit Query to Manager</CardTitle>
+              <CardDescription>Get help with your internship. A manager will be notified of your question.</CardDescription>
             </CardHeader>
             <CardContent className="flex-grow overflow-hidden">
                 <ScrollArea className="h-full pr-4">
@@ -357,7 +305,7 @@ export default function StudentPage() {
                 <Input
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
-                  placeholder={`Ask about ${activeCourseTopic}...`}
+                  placeholder={`Ask about ${activeResourceTopic}...`}
                   disabled={isAnswering}
                 />
                 <Button type="submit" disabled={isAnswering}>
@@ -367,6 +315,21 @@ export default function StudentPage() {
             </CardHeader>
           </Card>
         </TabsContent>
+
+        <TabsContent value="map">
+            <Card>
+                <CardHeader>
+                    <CardTitle>BEL Campus Map</CardTitle>
+                    <CardDescription>A map of the Bharat Electronics Limited campus.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-muted">
+                        <Image src="https://placehold.co/800x450.png" alt="BEL Campus Map" layout="fill" objectFit="cover" data-ai-hint="campus map" />
+                    </div>
+                </CardContent>
+            </Card>
+        </TabsContent>
+
       </Tabs>
     </DashboardPage>
   );

@@ -54,18 +54,13 @@ type Session = {
   role: "student" | "teacher" | "admin";
 } | null;
 
-const studentNavItems = [
+const internNavItems = [
   { href: "/student", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/student/flashcards", icon: Copy, label: "Flashcards" },
-  { href: "/student/quiz", icon: HelpCircle, label: "Quizzes" },
+  { href: "/student/schedule", icon: Copy, label: "Schedule" },
+  { href: "/student/resources", icon: HelpCircle, label: "Resources" },
 ];
 
-const teacherNavItems = [
-  { href: "/teacher", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/teacher/grading", icon: GraduationCap, label: "Grading Center" },
-];
-
-const managementNavItems = [
+const managerNavItems = [
     { href: "/management", icon: LayoutDashboard, label: "Dashboard" },
 ];
 
@@ -77,7 +72,7 @@ export function DashboardPage({
 }: {
   children: React.ReactNode;
   title: string;
-  role: "Management" | "Teacher" | "Student";
+  role: "Manager" | "Intern";
 }) {
   const router = useRouter();
   const [session, setSession] = useState<Session>(null);
@@ -93,12 +88,14 @@ export function DashboardPage({
 
   useEffect(() => {
     const currentSession = getSession();
-    const expectedRole = role.toLowerCase();
+    let expectedRole = role.toLowerCase();
+    if(expectedRole === 'manager') expectedRole = 'admin';
+    if(expectedRole === 'intern') expectedRole = 'student';
+
     if (!currentSession || currentSession.role !== expectedRole) {
         logout();
-        if (role === 'Student') router.push('/student/login');
-        if (role === 'Teacher') router.push('/teacher/login');
-        if (role === 'Management') router.push('/');
+        if (role === 'Intern') router.push('/student/login');
+        if (role === 'Manager') router.push('/');
     } else {
         setSession(currentSession as Session);
         if (currentSession.role !== 'admin') {
@@ -114,22 +111,19 @@ export function DashboardPage({
   };
   
   const getProfileLink = () => {
-    if (role === "Student") return "/profile/student";
-    if (role === "Teacher") return "/profile/teacher";
+    if (role === "Intern") return "/profile/student";
     return "#";
   }
 
   const getSettingsLink = () => {
-    if (role === "Student") return "/settings/student";
-    if (role === "Teacher") return "/settings/teacher";
+    if (role === "Intern") return "/settings/student";
     return "#";
   }
 
   const getNavItems = () => {
       switch(role) {
-          case 'Student': return studentNavItems;
-          case 'Teacher': return teacherNavItems;
-          case 'Management': return managementNavItems;
+          case 'Intern': return internNavItems;
+          case 'Manager': return managerNavItems;
           default: return [];
       }
   }
@@ -161,7 +155,7 @@ export function DashboardPage({
         <SidebarHeader>
            <div className="flex items-center gap-2 p-2">
             <Shield className="w-6 h-6 text-primary" />
-            <span className="font-semibold text-lg whitespace-nowrap">Sahayak AI</span>
+            <span className="font-semibold text-lg whitespace-nowrap">NWCS Portal</span>
            </div>
         </SidebarHeader>
         <SidebarContent>
@@ -180,7 +174,7 @@ export function DashboardPage({
         </SidebarContent>
         <SidebarFooter>
            <SidebarMenu>
-            {role !== 'Management' && (
+            {role !== 'Manager' && (
                <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Profile">
                     <Link href={getProfileLink()}>
@@ -190,7 +184,7 @@ export function DashboardPage({
                 </SidebarMenuButton>
               </SidebarMenuItem>
             )}
-             {role !== 'Management' && (
+             {role !== 'Manager' && (
                <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Settings">
                     <Link href={getSettingsLink()}>
@@ -217,7 +211,7 @@ export function DashboardPage({
               <h1 className="text-xl font-bold tracking-tight">{title}</h1>
             </div>
             <div className="flex items-center gap-4">
-                {role !== 'Management' && (
+                {role !== 'Manager' && (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                            <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -278,17 +272,17 @@ export function DashboardPage({
                       )}
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                     {role !== 'Management' && (
+                     {role !== 'Manager' && (
                        <DropdownMenuItem asChild>
                          <Link href={getProfileLink()}><User className="mr-2 h-4 w-4" />Profile</Link>
                        </DropdownMenuItem>
                      )}
-                     {role !== 'Management' && (
+                     {role !== 'Manager' && (
                         <DropdownMenuItem asChild>
                            <Link href={getSettingsLink()}><Settings className="mr-2 h-4 w-4" />Settings</Link>
                         </DropdownMenuItem>
                      )}
-                    {role !== 'Management' && <DropdownMenuSeparator />}
+                    {role !== 'Manager' && <DropdownMenuSeparator />}
                     <DropdownMenuItem onClick={handleLogout}>
                        <LogOut className="mr-2 h-4 w-4" />Logout
                     </DropdownMenuItem>

@@ -7,11 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { BookUser, ArrowRight, Loader2 } from "lucide-react";
-import { loginTeacher } from "@/lib/authService";
+import { Shield, ArrowRight, Loader2 } from "lucide-react";
+import { loginAdmin } from "@/lib/authService";
 import Link from "next/link";
 
-export default function TeacherLoginPage() {
+export default function ManagerLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -23,13 +23,13 @@ export default function TeacherLoginPage() {
     setIsLoading(true);
 
     try {
-      const teacher = await loginTeacher(email, password);
-      if (teacher) {
+      const manager = await loginAdmin(email, password);
+      if (manager) {
         toast({
           title: "Login Successful",
-          description: `Welcome back, ${teacher.name}!`,
+          description: `Welcome back, ${manager.name}!`,
         });
-        router.push("/teacher");
+        router.push("/management");
       } else {
         toast({
           variant: "destructive",
@@ -52,16 +52,16 @@ export default function TeacherLoginPage() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
         <div className="text-center mb-8">
             <Link href="/">
-             <h1 className="text-4xl font-bold text-primary tracking-tight hover:opacity-80 transition-opacity">Sahayak AI</h1>
+             <h1 className="text-4xl font-bold text-primary tracking-tight hover:opacity-80 transition-opacity">NWCS Internship Portal</h1>
             </Link>
-          <p className="mt-2 text-lg text-muted-foreground">Teacher Portal</p>
+          <p className="mt-2 text-lg text-muted-foreground">Manager Portal</p>
         </div>
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
             <div className="flex justify-center mb-4">
-                 <BookUser className="w-10 h-10 text-primary" />
+                 <Shield className="w-10 h-10 text-primary" />
             </div>
-          <CardTitle>Teacher Login</CardTitle>
+          <CardTitle>Manager Login</CardTitle>
           <CardDescription>Enter your credentials to access your dashboard.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -71,7 +71,7 @@ export default function TeacherLoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="you@school.com"
+                placeholder="you@bel.com"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}

@@ -20,8 +20,8 @@ export interface Student {
   name: string;
   email: string;
   password?: string; // Should be handled securely in a real app
-  grade: string;
-  teacherId: string;
+  grade: string; // Used as "Department" for interns
+  teacherId: string; // Used as "ManagerId" for interns
   theme?: Theme;
 }
 
@@ -29,8 +29,8 @@ export interface Course {
   id: string;
   title: string;
   description: string;
-  modules: string[];
-  teacherId: string;
+  modules: string[]; // Used for resource content links
+  teacherId: string; // Used as "ManagerId" for resources
 }
 
 export interface QuizResult {
@@ -46,9 +46,9 @@ export interface QuizResult {
 }
 
 interface MockDB {
-  teachers: Teacher[];
-  students: Student[];
-  courses: Course[];
+  teachers: Teacher[]; // Managers
+  students: Student[]; // Interns
+  courses: Course[]; // Resources
   quizResults: QuizResult[];
 }
 
@@ -56,37 +56,32 @@ interface MockDB {
 const globalForDb = globalThis as unknown as { db: MockDB | undefined };
 
 const db = globalForDb.db ?? {
-  teachers: [
-    { id: 't1', name: 'Jane Doe', email: 'jane.doe@school.com', password: 'password123', role: 'teacher', theme: 'default' },
-    { id: 't2', name: 'John Smith', email: 'john.smith@school.com', password: 'password123', role: 'teacher', theme: 'default' },
-    { id: 't0', name: 'Admin User', email: 'admin@sahayak.com', password: 'SahayakAdmin123', role: 'admin' },
+  teachers: [ // Managers
+    { id: 't1', name: 'Dr. Evelyn Reed', email: 'e.reed@bel.com', password: 'password123', role: 'admin' },
+    { id: 't2', name: 'Mr. Johnathan Chen', email: 'j.chen@bel.com', password: 'password123', role: 'admin' },
   ],
-  students: [
-    { id: 's1', name: 'Alex Doe', grade: '10th Grade', teacherId: 't1', email: 'alex.doe@school.com', password: 'password123', theme: 'default' },
-    { id: 's2', name: 'Sam Wilson', grade: '10th Grade', teacherId: 't1', email: 'sam.wilson@school.com', password: 'password123', theme: 'default' },
-    { id: 's3', name: 'Maria Hill', grade: '11th Grade', teacherId: 't2', email: 'maria.hill@school.com', password: 'password123', theme: 'default' },
+  students: [ // Interns
+    { id: 's1', name: 'Alex Doe', grade: 'Networking', teacherId: 't1', email: 'alex.doe@bel.com', password: 'password123', theme: 'default' },
+    { id: 's2', name: 'Sam Wilson', grade: 'Cyber-Security', teacherId: 't1', email: 'sam.wilson@bel.com', password: 'password123', theme: 'default' },
+    { id: 's3', name: 'Maria Hill', grade: 'Networking', teacherId: 't2', email: 'maria.hill@bel.com', password: 'password123', theme: 'default' },
   ],
-  courses: [
+  courses: [ // Resources
     { 
       id: 'c1', 
-      title: 'Introduction to Algebra', 
-      description: 'Learn the fundamentals of algebraic expressions and equations.', 
-      modules: ['Variables and Expressions', 'Solving Equations', 'Functions and Graphs'], 
+      title: 'Intro to TCP/IP', 
+      description: 'Fundamentals of the TCP/IP protocol suite.', 
+      modules: ['OSI Model PDF', 'Packet Tracing Guide', 'Subnetting Cheat Sheet'], 
       teacherId: 't1' 
     },
     { 
       id: 'c2', 
-      title: 'World History: Ancient Civilizations', 
-      description: 'Explore the history of early human societies from Mesopotamia to Rome.', 
-      modules: ['The Fertile Crescent', 'Ancient Egypt', 'Greece and Rome'], 
+      title: 'Ethical Hacking Principles', 
+      description: 'Learn the core principles of ethical hacking and penetration testing.', 
+      modules: ['Reconnaissance Video', 'Scanning Techniques PDF'], 
       teacherId: 't2' 
     },
   ],
-  quizResults: [
-    { id: 'qr1', studentId: 's1', courseId: 'c1', score: 80, correctAnswers: 4, totalQuestions: 5, submittedAt: '2024-07-28T10:00:00Z', answers: {0: "A", 1: "B", 2: "C", 3: "D", 4: "A"}, graded: false },
-    { id: 'qr2', studentId: 's2', courseId: 'c1', score: 60, correctAnswers: 3, totalQuestions: 5, submittedAt: '2024-07-28T10:05:00Z', answers: {0: "B", 1: "B", 2: "C", 3: "D", 4: "B"}, graded: true },
-    { id: 'qr3', studentId: 's3', courseId: 'c2', score: 95, correctAnswers: 19, totalQuestions: 20, submittedAt: '2024-07-28T11:00:00Z', answers: {}, graded: false },
-  ],
+  quizResults: [],
 };
 
 if (process.env.NODE_ENV !== 'production') globalForDb.db = db;
@@ -94,12 +89,12 @@ if (process.env.NODE_ENV !== 'production') globalForDb.db = db;
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 const generateId = (prefix: string) => `${prefix}${Date.now()}${Math.random().toString(36).substring(2, 5)}`;
 
-// Teacher Services
+// Manager Services (formerly Teacher)
 export async function addTeacher(teacher: Omit<Teacher, 'id'>): Promise<Teacher> {
   await delay(300);
-  const newTeacher: Teacher = { ...teacher, id: generateId('t'), theme: 'default' };
-  db.teachers.push(newTeacher);
-  return newTeacher;
+  const newManager: Teacher = { ...teacher, id: generateId('t'), theme: 'default', role: 'admin' };
+  db.teachers.push(newManager);
+  return newManager;
 };
 
 export async function getTeachers(): Promise<Teacher[]> {
@@ -122,7 +117,7 @@ export async function updateTeacher(id: string, updates: Partial<Teacher>): Prom
   const teacherIndex = db.teachers.findIndex(t => t.id === id);
   if (teacherIndex === -1) return null;
   const originalPassword = db.teachers[teacherIndex].password;
-  db.teachers[teacherIndex] = { ...db.teachers[teacherIndex], ...updates };
+  db.teachers[teacherIndex] = { ...db.teachers[teacherIndex], ...updates, role: 'admin' };
   if (!updates.password) {
     db.teachers[teacherIndex].password = originalPassword;
   }
@@ -164,12 +159,12 @@ export async function getTeacherByEmail(email: string): Promise<Teacher | null> 
   return db.teachers.find(t => t.email.toLowerCase() === email.toLowerCase()) || null;
 }
 
-// Student Services
+// Intern Services (formerly Student)
 export async function addStudent(student: Omit<Student, 'id'>): Promise<Student> {
   await delay(300);
-  const newStudent: Student = { ...student, id: generateId('s'), theme: 'default' };
-  db.students.push(newStudent);
-  return newStudent;
+  const newIntern: Student = { ...student, id: generateId('s'), theme: 'default' };
+  db.students.push(newIntern);
+  return newIntern;
 };
 
 export async function getStudents(): Promise<Student[]> {
@@ -243,19 +238,19 @@ export async function notifyTeacherOfQuestion(studentId: string, question: strin
   if (!student || !student.teacherId) return;
 
   await createNotification({
-    userId: student.teacherId,
-    message: `${student.name} asked a question about "${courseTopic}": "${question.substring(0, 50)}${question.length > 50 ? '...' : ''}"`,
-    link: '/teacher?tab=qna', // A future Q&A tab for teachers
+    userId: student.teacherId, // Manager's ID
+    message: `${student.name} submitted a query about "${courseTopic}": "${question.substring(0, 50)}${question.length > 50 ? '...' : ''}"`,
+    link: '/management?tab=queries', // A future queries tab for managers
   });
 }
 
 
-// Course Services
+// Resource Services (formerly Course)
 export async function addCourse(course: Omit<Course, 'id'>): Promise<Course> {
   await delay(300);
-  const newCourse: Course = { ...course, id: generateId('c') };
-  db.courses.push(newCourse);
-  return newCourse;
+  const newResource: Course = { ...course, id: generateId('c') };
+  db.courses.push(newResource);
+  return newResource;
 };
 
 export async function getCourses(): Promise<Course[]> {
@@ -288,7 +283,7 @@ export async function deleteCourse(id: string): Promise<void> {
   db.courses = db.courses.filter(c => c.id !== id);
 };
 
-// Quiz Result Services
+// Quiz Result Services (can be repurposed for attendance/leaderboard later)
 export async function submitQuizResult(result: Omit<QuizResult, 'id' | 'submittedAt' | 'graded'>): Promise<void> {
   await delay(100);
   const newResult: QuizResult = {
@@ -298,25 +293,12 @@ export async function submitQuizResult(result: Omit<QuizResult, 'id' | 'submitte
     graded: false
   };
 
-  // Remove previous result for the same student and course
   const filteredResults = db.quizResults.filter(
     r => !(r.studentId === newResult.studentId && r.courseId === newResult.courseId)
   );
   
   filteredResults.push(newResult);
   db.quizResults = filteredResults;
-
-  // Create a notification for the teacher
-  const student = await getStudentById(result.studentId);
-  const course = db.courses.find(c => c.id === result.courseId);
-
-  if (student && course && course.teacherId) {
-    await createNotification({
-      userId: course.teacherId,
-      message: `${student.name} submitted a quiz for ${course.title}. Score: ${result.score}%`,
-      link: `/teacher/grading?courseId=${course.id}&studentId=${student.id}`,
-    });
-  }
 }
 
 export async function gradeQuiz(quizResultId: string): Promise<boolean> {
@@ -325,17 +307,6 @@ export async function gradeQuiz(quizResultId: string): Promise<boolean> {
   if (!result) return false;
   
   result.graded = true;
-
-  const student = await getStudentById(result.studentId);
-  const course = db.courses.find(c => c.id === result.courseId);
-
-  if (student && course) {
-    await createNotification({
-      userId: student.id,
-      message: `Your quiz for "${course.title}" has been graded! Your score is ${result.score.toFixed(0)}%.`,
-      link: `/student/quiz?courseId=${course.id}&graded=true`
-    });
-  }
   return true;
 }
 

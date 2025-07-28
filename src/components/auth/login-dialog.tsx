@@ -39,7 +39,7 @@ export function ManagementLoginDialog({ open, onOpenChange }: ManagementLoginDia
       if (admin) {
         toast({
           title: "Login Successful",
-          description: "Redirecting to management dashboard...",
+          description: "Redirecting to manager dashboard...",
         });
         router.push("/management");
       } else {
@@ -65,9 +65,9 @@ export function ManagementLoginDialog({ open, onOpenChange }: ManagementLoginDia
       <DialogContent className="sm:max-w-[425px]">
         <form onSubmit={handleLogin}>
           <DialogHeader>
-            <DialogTitle>Management Login</DialogTitle>
+            <DialogTitle>Manager Login</DialogTitle>
             <DialogDescription>
-              Enter credentials to access the management dashboard.
+              Enter credentials to access the manager dashboard.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -81,7 +81,7 @@ export function ManagementLoginDialog({ open, onOpenChange }: ManagementLoginDia
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="col-span-3"
-                placeholder="admin@sahayak.com"
+                placeholder="manager@bel.com"
                 required
                 disabled={isLoading}
               />

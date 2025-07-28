@@ -5,8 +5,8 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { ClientSessionProvider } from '@/components/auth/client-session-provider';
 
 export const metadata: Metadata = {
-  title: 'Sahayak AI',
-  description: 'Multi-User AI Assistant Prototype',
+  title: 'NWCS Internship Portal',
+  description: 'Internship Portal for NWCS (Networking and Cyber-Security)',
   manifest: '/manifest.json'
 };
 
