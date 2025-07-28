@@ -67,13 +67,13 @@ const globalForDb = globalThis as unknown as { db: MockDB | undefined };
 
 const db = globalForDb.db ?? {
   teachers: [ // Managers
-    { id: 't1', name: 'Evelyn Reed', email: 'manager@bel.com', password: 'Manager@NWCS', role: 'admin' },
+    { id: 't1', name: 'Manager', email: 'manager@bel.com', password: 'Manager@NWCS', role: 'admin' },
     { id: 't2', name: 'Johnathan Chen', email: 'j.chen@bel.com', password: 'password123', role: 'admin' },
   ],
   students: [ // Interns
     { id: 's1', name: 'Alex Doe', grade: 'Networking', teacherId: 't1', email: 'intern@bel.com', password: 'Intern@NWCS', theme: 'default' },
     { id: 's2', name: 'Sam Wilson', grade: 'Cyber-Security', teacherId: 't1', email: 'sam.wilson@bel.com', password: 'password123', theme: 'default' },
-    { id: 's3', name: 'Maria Hill', grade: 'Networking', teacherId: 't2', email: 'maria.hill@bel.com', password: 'password123', theme: 'default' },
+    { id: 's3', name: 'Maria Hill', grade: 'Networking', teacherId: 't1', email: 'maria.hill@bel.com', password: 'password123', theme: 'default' },
   ],
   courses: [ // Resources
     { 
@@ -88,7 +88,7 @@ const db = globalForDb.db ?? {
       title: 'Ethical Hacking Principles', 
       description: 'Learn the core principles of ethical hacking and penetration testing.', 
       modules: ['Reconnaissance Video', 'Scanning Techniques PDF'], 
-      teacherId: 't2' 
+      teacherId: 't1' 
     },
   ],
   quizResults: [],
