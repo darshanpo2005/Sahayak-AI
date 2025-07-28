@@ -7,7 +7,7 @@ type User = Student | Omit<Teacher, 'password'>;
 
 export type Session = {
     user: User;
-    role: 'student' | 'admin'; // 'teacher' role is now 'admin' for managers
+    role: 'student' | 'admin';
 };
 
 // This function can only be called on the client side
@@ -37,11 +37,10 @@ export const logout = () => {
 
 export const loginStudent = async (email: string, password: string):Promise<Student | null> => {
     const student = await getStudentByEmail(email);
+    // Simplified check
     if (student && student.password === password) {
         const sessionData: Session = { user: student, role: 'student' };
-        if (typeof window !== 'undefined') {
-            localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
-        }
+        setSession(sessionData);
         return student;
     }
     return null;
@@ -54,13 +53,11 @@ export const loginTeacher = async (email: string, password: string): Promise<Omi
 
 export const loginAdmin = async (email: string, password: string): Promise<Omit<Teacher, 'password'> | null> => {
     const admin = await getTeacherByEmail(email);
-    // In the new model, any non-intern is a manager/admin.
+    // Simplified check for admin/manager login
     if (admin && admin.password === password) {
         const { password: _, ...adminData } = admin;
         const sessionData: Session = { user: adminData, role: 'admin' };
-        if (typeof window !== 'undefined') {
-            localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
-        }
+        setSession(sessionData);
         return adminData;
     }
     return null;
