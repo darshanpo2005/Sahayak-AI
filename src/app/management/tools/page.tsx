@@ -61,7 +61,7 @@ export default function AIToolsPage() {
   useEffect(() => {
     const currentSession = getSession();
     if (!currentSession || currentSession.role !== 'admin') {
-      router.push('/');
+      router.push('/management/login');
     } else {
       setSession(currentSession as { user: Teacher; role: 'admin' });
     }

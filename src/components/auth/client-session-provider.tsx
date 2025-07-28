@@ -1,18 +1,21 @@
+
 "use client";
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { getSession } from '@/lib/authService';
 import { cn } from '@/lib/utils';
 import type { Theme } from '@/lib/services';
 
 export function ClientSessionProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>('default');
+  const pathname = usePathname();
 
   useEffect(() => {
     const session = getSession();
     const userTheme = session?.user?.theme || 'default';
     setTheme(userTheme);
-  }, []);
+  }, [pathname]); // Rerun on path change to get session theme
 
   useEffect(() => {
     document.body.classList.remove('theme-green', 'theme-purple');

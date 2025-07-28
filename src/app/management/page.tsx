@@ -55,6 +55,13 @@ export default function ManagementPage() {
   const [editingTarget, setEditingTarget] = useState<EditingTarget>(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
+  useEffect(() => {
+    const session = getSession();
+    if (!session || session.role !== 'admin') {
+      router.push('/management/login');
+    }
+  }, [router]);
+
   const fetchDashboardData = async () => {
     setIsLoading(true);
     try {

@@ -13,14 +13,14 @@ export default function Home() {
       description: "Full access to manage interns, schedules, resources, and events.",
       buttonText: "Proceed as Manager",
       icon: <Shield className="w-10 h-10 text-primary" />,
-      href: "/management",
+      href: "/management/login",
     },
     {
       name: "Intern",
       description: "Access schedule, resources, events, and submit queries.",
       buttonText: "Proceed as Intern",
       icon: <GraduationCap className="w-10 h-10 text-primary" />,
-      href: "/student",
+      href: "/student/login",
     },
   ];
 
