@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -71,7 +72,7 @@ export default function InternLoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="you@bel.com"
+                placeholder="alex.doe@bel.com"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
