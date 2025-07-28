@@ -14,9 +14,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { getLessonPlan, getQuiz, getAssignment } from "@/lib/actions";
 import type { GenerateLessonPlanAssistanceOutput, GenerateQuizQuestionsOutput, GenerateAssignmentOutput } from "@/lib/actions";
-import { Lightbulb, HelpCircle, BarChart3, Bot, Sparkles, Loader2, CalendarCheck, CheckCircle2, RefreshCw, ClipboardEdit } from "lucide-react";
+import { Lightbulb, HelpCircle, BarChart3, Bot, Sparkles, Loader2, CheckCircle2, RefreshCw, ClipboardEdit } from "lucide-react";
 import { DashboardPage } from "@/components/layout/dashboard-page";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { getStudents, Student, Teacher, getCourses, Course, QuizResult, getQuizResultsForCourse } from "@/lib/services";
 import { getSession } from "@/lib/authService";
@@ -36,7 +35,7 @@ const storeQuiz = (courseId: string, quizData: GenerateQuizQuestionsOutput) => {
 export default function AIToolsPage() {
   const { toast } = useToast();
   const router = useRouter();
-  const [session, setSession] = useState<{ user: Teacher; role: 'teacher' | 'admin' } | null>(null);
+  const [session, setSession] = useState<{ user: Teacher; role: 'admin' } | null>(null);
 
   const [lessonPlan, setLessonPlan] = useState<GenerateLessonPlanAssistanceOutput | null>(null);
   const [isLessonPlanLoading, setIsLessonPlanLoading] = useState(false);
@@ -200,14 +199,6 @@ export default function AIToolsPage() {
     setIsAssignmentLoading(false);
   };
 
-  const handleAttendanceSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    toast({
-      title: "Attendance Submitted",
-      description: "Today's attendance has been successfully recorded.",
-    });
-  };
-
   const getStudentProgress = (studentId: string) => {
     const studentResults = quizResults.filter(r => r.studentId === studentId);
     if (studentResults.length === 0) return { score: "N/A", status: "No Quiz Taken" };
@@ -232,62 +223,13 @@ export default function AIToolsPage() {
 
   return (
     <DashboardPage title="Manager AI Tools" role="Manager">
-      <Tabs defaultValue="attendance">
-        <TabsList className="mb-6 grid grid-cols-2 sm:grid-cols-5 w-full sm:w-auto">
-          <TabsTrigger value="attendance"><CalendarCheck className="mr-2 h-4 w-4"/>Attendance</TabsTrigger>
+      <Tabs defaultValue="lesson-plan">
+        <TabsList className="mb-6 grid grid-cols-2 sm:grid-cols-4 w-full sm:w-auto">
           <TabsTrigger value="lesson-plan"><Lightbulb className="mr-2 h-4 w-4" />Lesson Plan</TabsTrigger>
           <TabsTrigger value="assignments"><ClipboardEdit className="mr-2 h-4 w-4" />Assignments</TabsTrigger>
           <TabsTrigger value="quiz"><HelpCircle className="mr-2 h-4 w-4" />Quiz</TabsTrigger>
           <TabsTrigger value="progress"><BarChart3 className="mr-2 h-4 w-4" />Progress</TabsTrigger>
         </TabsList>
-
-        <TabsContent value="attendance">
-          <Card>
-            <CardHeader>
-              <CardTitle>Take Attendance</CardTitle>
-              <CardDescription>Mark intern attendance for {new Date().toLocaleDateString()}.</CardDescription>
-            </CardHeader>
-            <form onSubmit={handleAttendanceSubmit}>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Intern Name</TableHead>
-                      <TableHead className="text-right">Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {isStudentsLoading && <TableRow><TableCell colSpan={2} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
-                    {!isStudentsLoading && students.map((student) => (
-                      <TableRow key={student.id}>
-                        <TableCell className="font-medium">{student.name}</TableCell>
-                        <TableCell className="text-right">
-                          <RadioGroup defaultValue="present" name={`attendance-${student.name}`} className="justify-end gap-4 sm:gap-6 flex flex-row">
-                             <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="present" id={`${student.name}-present`} />
-                                <Label htmlFor={`${student.name}-present`}>Present</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="absent" id={`${student.name}-absent`} />
-                                <Label htmlFor={`${student.name}-absent`}>Absent</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="late" id={`${student.name}-late`} />
-                                <Label htmlFor={`${student.name}-late`}>Late</Label>
-                              </div>
-                          </RadioGroup>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-              <CardFooter>
-                  <Button type="submit" className="w-full sm:w-auto ml-auto">Submit Attendance</Button>
-              </CardFooter>
-            </form>
-          </Card>
-        </TabsContent>
 
         <TabsContent value="lesson-plan">
           <div className="grid gap-6 lg:grid-cols-2">
