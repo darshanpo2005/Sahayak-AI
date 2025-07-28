@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, CalendarCheck } from "lucide-react";
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
-import { getStudents, Student, Teacher, addOrUpdateAttendance } from "@/lib/services";
+import { getStudentsForTeacher, Student, Teacher, addOrUpdateAttendance } from "@/lib/services";
 import type { AttendanceStatus } from "@/lib/services";
 import { getSession } from "@/lib/authService";
 
@@ -34,9 +34,10 @@ export default function AttendancePage() {
 
   useEffect(() => {
     const fetchInterns = async () => {
+      if (!session) return;
       setIsLoading(true);
       try {
-        const internsData = await getStudents();
+        const internsData = await getStudentsForTeacher(session.user.id);
         setInterns(internsData);
         // Initialize attendance state
         const initialAttendance: Record<string, AttendanceStatus> = {};
@@ -154,7 +155,7 @@ export default function AttendancePage() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={2} className="text-center text-muted-foreground">
-                      No interns found.
+                      You have no interns assigned.
                     </TableCell>
                   </TableRow>
                 )}
