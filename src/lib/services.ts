@@ -57,8 +57,8 @@ const globalForDb = globalThis as unknown as { db: MockDB | undefined };
 
 const db = globalForDb.db ?? {
   teachers: [ // Managers
-    { id: 't1', name: 'Dr. Evelyn Reed', email: 'e.reed@bel.com', password: 'password123', role: 'admin' },
-    { id: 't2', name: 'Mr. Johnathan Chen', email: 'j.chen@bel.com', password: 'password123', role: 'admin' },
+    { id: 't1', name: 'Evelyn Reed', email: 'manager@bel.com', password: 'Manager@NWCS', role: 'admin' },
+    { id: 't2', name: 'Johnathan Chen', email: 'j.chen@bel.com', password: 'password123', role: 'admin' },
   ],
   students: [ // Interns
     { id: 's1', name: 'Alex Doe', grade: 'Networking', teacherId: 't1', email: 'alex.doe@bel.com', password: 'password123', theme: 'default' },
