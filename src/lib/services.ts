@@ -61,7 +61,7 @@ const db = globalForDb.db ?? {
     { id: 't2', name: 'Johnathan Chen', email: 'j.chen@bel.com', password: 'password123', role: 'admin' },
   ],
   students: [ // Interns
-    { id: 's1', name: 'Alex Doe', grade: 'Networking', teacherId: 't1', email: 'alex.doe@bel.com', password: 'password123', theme: 'default' },
+    { id: 's1', name: 'Alex Doe', grade: 'Networking', teacherId: 't1', email: 'intern@bel.com', password: 'Intern@NWCS', theme: 'default' },
     { id: 's2', name: 'Sam Wilson', grade: 'Cyber-Security', teacherId: 't1', email: 'sam.wilson@bel.com', password: 'password123', theme: 'default' },
     { id: 's3', name: 'Maria Hill', grade: 'Networking', teacherId: 't2', email: 'maria.hill@bel.com', password: 'password123', theme: 'default' },
   ],
