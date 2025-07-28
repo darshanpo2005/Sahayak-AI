@@ -232,7 +232,7 @@ export async function deleteStudent(id: string): Promise<void> {
   db.students = db.students.filter(s => s.id !== id);
 };
 
-export async function notifyTeacherOfQuestion(studentId: string, question: string, courseTopic: string): Promise<void> {
+export async function notifyManagerOfQuestion(studentId: string, question: string, courseTopic: string): Promise<void> {
   await delay(50);
   const student = await getStudentById(studentId);
   if (!student || !student.teacherId) return;
@@ -240,7 +240,7 @@ export async function notifyTeacherOfQuestion(studentId: string, question: strin
   await createNotification({
     userId: student.teacherId, // Manager's ID
     message: `${student.name} submitted a query about "${courseTopic}": "${question.substring(0, 50)}${question.length > 50 ? '...' : ''}"`,
-    link: '/management?tab=queries', // A future queries tab for managers
+    link: '/management',
   });
 }
 

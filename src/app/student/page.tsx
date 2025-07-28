@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
 import { getTutorResponse, getCertificate, getAudioForText } from "@/lib/actions";
-import { getCourses, Course, Student, notifyTeacherOfQuestion } from "@/lib/services";
+import { getCourses, Course, Student, notifyManagerOfQuestion } from "@/lib/services";
 import { useToast } from "@/hooks/use-toast";
 import { getSession } from "@/lib/authService";
 import Link from "next/link";
@@ -125,7 +125,7 @@ export default function InternPage() {
     setIsAnswering(true);
 
     // Notify manager in the background
-    notifyTeacherOfQuestion(session.user.id, currentQuestion, activeResourceTopic);
+    notifyManagerOfQuestion(session.user.id, currentQuestion, activeResourceTopic);
 
     const result = await getTutorResponse({
       question: currentQuestion,
