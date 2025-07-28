@@ -33,10 +33,10 @@ const storeQuiz = (courseId: string, quizData: GenerateQuizQuestionsOutput) => {
   localStorage.setItem(quizKey, JSON.stringify(storedQuiz));
 };
 
-export default function TeacherPage() {
+export default function AIToolsPage() {
   const { toast } = useToast();
   const router = useRouter();
-  const [session, setSession] = useState<{ user: Teacher; role: 'teacher' } | null>(null);
+  const [session, setSession] = useState<{ user: Teacher; role: 'teacher' | 'admin' } | null>(null);
 
   const [lessonPlan, setLessonPlan] = useState<GenerateLessonPlanAssistanceOutput | null>(null);
   const [isLessonPlanLoading, setIsLessonPlanLoading] = useState(false);
@@ -61,10 +61,10 @@ export default function TeacherPage() {
 
   useEffect(() => {
     const currentSession = getSession();
-    if (!currentSession || currentSession.role !== 'teacher') {
-      router.push('/teacher/login');
+    if (!currentSession || currentSession.role !== 'admin') {
+      router.push('/');
     } else {
-      setSession(currentSession as { user: Teacher; role: 'teacher' });
+      setSession(currentSession as { user: Teacher; role: 'admin' });
     }
   }, [router]);
 
@@ -77,12 +77,12 @@ export default function TeacherPage() {
           getStudents(),
           getCourses(),
         ]);
-        const teacherStudents = studentsData.filter(s => s.teacherId === session.user.id)
-        const teacherCourses = coursesData.filter(c => c.teacherId === session.user.id)
-        setStudents(teacherStudents);
-        setCourses(teacherCourses);
-        if (teacherCourses.length > 0 && !progressCourseId) {
-          setProgressCourseId(teacherCourses[0].id);
+        const managerStudents = studentsData.filter(s => s.teacherId === session.user.id)
+        const managerCourses = coursesData.filter(c => c.teacherId === session.user.id)
+        setStudents(managerStudents);
+        setCourses(managerCourses);
+        if (managerCourses.length > 0 && !progressCourseId) {
+          setProgressCourseId(managerCourses[0].id);
         }
       } catch (error) {
         toast({
@@ -109,7 +109,7 @@ export default function TeacherPage() {
         toast({
             variant: "destructive",
             title: "Error",
-            description: "Failed to load student progress.",
+            description: "Failed to load intern progress.",
         });
     } finally {
         setIsProgressLoading(false);
@@ -147,7 +147,7 @@ export default function TeacherPage() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Please select a course for the quiz.",
+        description: "Please select a resource for the quiz.",
       });
       return;
     }
@@ -164,7 +164,7 @@ export default function TeacherPage() {
       storeQuiz(quizCourseId, result.data);
       toast({
         title: "Quiz Generated & Stored",
-        description: `The quiz for ${courses.find(c => c.id === quizCourseId)?.title} is now available for students.`,
+        description: `The quiz for ${courses.find(c => c.id === quizCourseId)?.title} is now available for interns.`,
       });
     } else {
       setQuizError(result.error);
@@ -231,7 +231,7 @@ export default function TeacherPage() {
   }
 
   return (
-    <DashboardPage title="Teacher Dashboard" role="Teacher">
+    <DashboardPage title="Manager AI Tools" role="Manager">
       <Tabs defaultValue="attendance">
         <TabsList className="mb-6 grid grid-cols-2 sm:grid-cols-5 w-full sm:w-auto">
           <TabsTrigger value="attendance"><CalendarCheck className="mr-2 h-4 w-4"/>Attendance</TabsTrigger>
@@ -245,14 +245,14 @@ export default function TeacherPage() {
           <Card>
             <CardHeader>
               <CardTitle>Take Attendance</CardTitle>
-              <CardDescription>Mark student attendance for {new Date().toLocaleDateString()}.</CardDescription>
+              <CardDescription>Mark intern attendance for {new Date().toLocaleDateString()}.</CardDescription>
             </CardHeader>
             <form onSubmit={handleAttendanceSubmit}>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Student Name</TableHead>
+                      <TableHead>Intern Name</TableHead>
                       <TableHead className="text-right">Status</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -427,10 +427,10 @@ export default function TeacherPage() {
               <form onSubmit={handleQuizSubmit}>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="quizCourseId">Course</Label>
+                    <Label htmlFor="quizCourseId">Resource</Label>
                     <Select name="quizCourseId" onValueChange={setQuizCourseId} required>
                         <SelectTrigger>
-                            <SelectValue placeholder="Select a course" />
+                            <SelectValue placeholder="Select a resource" />
                         </SelectTrigger>
                         <SelectContent>
                             {courses.map(c => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
@@ -500,8 +500,8 @@ export default function TeacherPage() {
           <Card>
             <CardHeader className="flex-row items-center justify-between">
               <div>
-                <CardTitle>Student Progress</CardTitle>
-                <CardDescription>Overview of your students' performance on the latest quiz.</CardDescription>
+                <CardTitle>Intern Progress</CardTitle>
+                <CardDescription>Overview of your interns' performance on the latest quiz.</CardDescription>
               </div>
               <Button onClick={fetchProgressData} variant="outline" size="sm" disabled={isProgressLoading}>
                 <RefreshCw className={cn("mr-2 h-4 w-4", isProgressLoading && "animate-spin")} />
@@ -510,10 +510,10 @@ export default function TeacherPage() {
             </CardHeader>
             <CardContent className="space-y-8">
                 <div className="pt-2">
-                    <Label htmlFor="progressCourse">Select Course</Label>
+                    <Label htmlFor="progressCourse">Select Resource</Label>
                     <Select value={progressCourseId} onValueChange={setProgressCourseId}>
                         <SelectTrigger id="progressCourse">
-                            <SelectValue placeholder="Select a course"/>
+                            <SelectValue placeholder="Select a resource"/>
                         </SelectTrigger>
                         <SelectContent>
                             {courses.map(c => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
@@ -532,7 +532,7 @@ export default function TeacherPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Student</TableHead>
+                    <TableHead>Intern</TableHead>
                     <TableHead>Latest Score</TableHead>
                     <TableHead className="text-right">Status</TableHead>
                   </TableRow>
@@ -556,7 +556,7 @@ export default function TeacherPage() {
                       )
                     })
                    ) : (
-                    <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground">No students assigned.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground">No interns assigned.</TableCell></TableRow>
                    )}
                 </TableBody>
               </Table>

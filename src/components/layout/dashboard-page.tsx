@@ -33,6 +33,7 @@ import {
   HelpCircle,
   BarChart3,
   BookCheck as GradingIcon,
+  Sparkles,
 } from "lucide-react";
 import { logout, getSession } from "@/lib/authService";
 import { useEffect, useState } from "react";
@@ -68,7 +69,7 @@ const internNavItems = [
 
 const managerNavItems = [
     { href: "/management", icon: LayoutDashboard, label: "Dashboard" },
-    { href: "/teacher", icon: ClipboardEdit, label: "AI Tools" },
+    { href: "/management/tools", icon: Sparkles, label: "AI Tools" },
     { href: "/teacher/grading", icon: GradingIcon, label: "Grading Center" },
 ];
 
