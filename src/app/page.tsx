@@ -69,9 +69,19 @@ export default function Home() {
               Welcome to the NWCS Internship Portal at Bharat Electronics Limited. Your journey towards excellence in Networking and Cyber-Security starts here.
             </p>
             <div className="mt-10 flex items-center justify-center gap-4">
-               <Link href="/student/login">
-                 <Button size="lg">Get Started</Button>
-               </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="lg">Get Started</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem asChild>
+                    <Link href="/management/login">Manager Login</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/student/login">Intern Login</Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </section>
