@@ -71,7 +71,7 @@ const managerNavItems = [
     { href: "/management", icon: LayoutDashboard, label: "Dashboard" },
     { href: "/management/attendance", icon: CalendarCheck, label: "Attendance" },
     { href: "/management/tools", icon: Sparkles, label: "AI Tools" },
-    { href: "/teacher/grading", icon: GradingIcon, label: "Grading Center" },
+    { href: "/management/grading", icon: GradingIcon, label: "Grading Center" },
 ];
 
 
