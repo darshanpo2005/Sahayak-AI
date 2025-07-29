@@ -23,7 +23,7 @@ export default function TeacherSettingsPage() {
   const { setTheme: setDarkMode } = useTheme();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const [session, setSession] = useState<{ user: Teacher; role: 'teacher' } | null>(null);
+  const [session, setSession] = useState<{ user: Teacher; role: 'admin' } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -32,10 +32,10 @@ export default function TeacherSettingsPage() {
 
   useEffect(() => {
     const currentSession = getSession();
-    if (!currentSession || currentSession.role !== 'teacher') {
-      router.push('/teacher/login');
+    if (!currentSession || currentSession.role !== 'admin') {
+      router.push('/management/login');
     } else {
-        const teacherSession = currentSession as { user: Teacher; role: 'teacher' };
+        const teacherSession = currentSession as { user: Teacher; role: 'admin' };
         setSession(teacherSession);
         setActiveTheme(teacherSession.user.theme || 'default');
     }
@@ -105,13 +105,13 @@ export default function TeacherSettingsPage() {
   );
 
   return (
-    <DashboardPage title="Settings" role="Teacher">
+    <DashboardPage title="Settings" role="Manager">
       <form onSubmit={handleSaveChanges}>
         <div className="grid gap-8">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><Palette /> Display</CardTitle>
-              <CardDescription>Choose how Sahayak AI looks and feels.</CardDescription>
+              <CardDescription>Choose how the Internship Portal looks and feels.</CardDescription>
             </CardHeader>
              <CardContent>
               {mounted && (
@@ -146,20 +146,20 @@ export default function TeacherSettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><Bell /> Notifications</CardTitle>
-              <CardDescription>Manage how you receive notifications about student activity.</CardDescription>
+              <CardDescription>Manage how you receive notifications about intern activity.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between rounded-lg border p-4">
                 <div className="space-y-0.5">
                   <Label htmlFor="submission-notifications" className="text-base">Submission Alerts</Label>
-                  <p className="text-sm text-muted-foreground">Get an email when a student submits an assignment.</p>
+                  <p className="text-sm text-muted-foreground">Get an email when an intern submits a quiz.</p>
                 </div>
                 <Switch id="submission-notifications" defaultChecked />
               </div>
               <div className="flex items-center justify-between rounded-lg border p-4">
                  <div className="space-y-0.5">
-                  <Label htmlFor="question-notifications" className="text-base">New Question Alerts</Label>
-                  <p className="text-sm text-muted-foreground">Get an email when a student asks a question on the Q&A board.</p>
+                  <Label htmlFor="question-notifications" className="text-base">New Query Alerts</Label>
+                  <p className="text-sm text-muted-foreground">Get an email when an intern submits a query.</p>
                 </div>
                 <Switch id="question-notifications" defaultChecked />
               </div>

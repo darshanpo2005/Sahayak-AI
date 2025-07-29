@@ -23,8 +23,8 @@ export default function TeacherProfilePage() {
   
   useEffect(() => {
     const session = getSession();
-    if (!session || session.role !== 'teacher') {
-      router.push('/teacher/login');
+    if (!session || session.role !== 'admin') {
+      router.push('/management/login');
       return;
     }
     setTeacher(session.user as Teacher);
@@ -57,13 +57,12 @@ export default function TeacherProfilePage() {
   }, [teacher, toast]);
   
   const getEnrolledCountForCourse = (courseId: string) => {
-    // This is a simple count for the prototype. In a real app, you'd have a proper relation.
     return assignedStudents.length;
   }
 
   if (!teacher) {
     return (
-       <DashboardPage title="My Profile" role="Teacher">
+       <DashboardPage title="My Profile" role="Manager">
          <div className="flex justify-center items-center h-64">
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
@@ -72,7 +71,7 @@ export default function TeacherProfilePage() {
   }
 
   return (
-    <DashboardPage title="My Profile" role="Teacher">
+    <DashboardPage title="My Profile" role="Manager">
       <div className="grid gap-8 md:grid-cols-3">
         <div className="md:col-span-1">
           <Card>
@@ -84,7 +83,7 @@ export default function TeacherProfilePage() {
                 </AvatarFallback>
               </Avatar>
               <CardTitle className="text-2xl">{teacher.name}</CardTitle>
-              <Badge variant="secondary">Teacher</Badge>
+              <Badge variant="secondary">Manager</Badge>
             </CardHeader>
             <CardContent className="text-center">
               <p className="text-muted-foreground">{teacher.email}</p>
@@ -96,15 +95,15 @@ export default function TeacherProfilePage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BookOpen className="w-6 h-6" />
-                Assigned Courses
+                Assigned Resources
               </CardTitle>
             </CardHeader>
             <CardContent>
                <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Course</TableHead>
-                    <TableHead>Enrolled Students</TableHead>
+                    <TableHead>Resource</TableHead>
+                    <TableHead>Assigned Interns</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -124,7 +123,7 @@ export default function TeacherProfilePage() {
                     ) : (
                       <TableRow>
                           <TableCell colSpan={2} className="text-center text-muted-foreground">
-                              No courses assigned.
+                              No resources assigned.
                           </TableCell>
                       </TableRow>
                     )}
@@ -136,15 +135,15 @@ export default function TeacherProfilePage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="w-6 h-6" />
-                My Students
+                My Interns
               </CardTitle>
             </CardHeader>
             <CardContent>
                <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Student Name</TableHead>
-                    <TableHead>Grade</TableHead>
+                    <TableHead>Intern Name</TableHead>
+                    <TableHead>Department</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -164,7 +163,7 @@ export default function TeacherProfilePage() {
                    ) : (
                        <TableRow>
                           <TableCell colSpan={2} className="text-center text-muted-foreground">
-                              No students assigned.
+                              No interns assigned.
                           </TableCell>
                       </TableRow>
                    )}

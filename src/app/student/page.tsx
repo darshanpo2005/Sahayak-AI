@@ -14,7 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
-import { getTutorResponse, getCertificate, getAudioForText } from "@/lib/actions";
+import { getTutorResponse, getAudioForText } from "@/lib/actions";
 import { getCoursesForStudent, Course, Student, notifyManagerOfQuestion, getAttendanceForStudent, AttendanceRecord } from "@/lib/services";
 import { useToast } from "@/hooks/use-toast";
 import { getSession } from "@/lib/clientAuth";
