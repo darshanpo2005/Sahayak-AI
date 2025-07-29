@@ -64,7 +64,7 @@ export default function StudentLoginPage() {
             <Link href="/" className="flex justify-center items-center mb-4 text-primary">
                 <GraduationCap className="w-8 h-8 mr-2" />
             </Link>
-          <CardTitle>Intern Login</CardTitle>
+          <CardTitle className="text-2xl">Intern Login</CardTitle>
           <CardDescription>
              Access your NWCS Internship Portal
           </CardDescription>
@@ -91,6 +91,7 @@ export default function StudentLoginPage() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••••••"
                   required
                   disabled={isLoading}
                 />

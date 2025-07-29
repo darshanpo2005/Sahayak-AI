@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -85,6 +85,7 @@ export function DashboardPage({
   role: "Manager" | "Intern";
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [session, setSession] = useState<Session>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -161,14 +162,14 @@ export function DashboardPage({
         <SidebarHeader>
            <div className="flex items-center gap-2 p-2">
             <Shield className="w-6 h-6 text-primary" />
-            <span className="font-semibold text-lg whitespace-nowrap">NWCS Portal</span>
+            <span className="font-semibold text-lg whitespace-nowrap text-primary">NWCS Portal</span>
            </div>
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
             {getNavItems().map((item) => (
               <SidebarMenuItem key={item.href}>
-                <SidebarMenuButton asChild tooltip={item.label}>
+                <SidebarMenuButton asChild tooltip={item.label} isActive={pathname === item.href}>
                   <Link href={item.href}>
                     <item.icon />
                     <span>{item.label}</span>
@@ -181,7 +182,7 @@ export function DashboardPage({
         <SidebarFooter>
            <SidebarMenu>
                <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Profile">
+                <SidebarMenuButton asChild tooltip="Profile" isActive={pathname.startsWith('/profile')}>
                     <Link href={getProfileLink()}>
                         <User/>
                         <span>Profile</span>
@@ -189,7 +190,7 @@ export function DashboardPage({
                 </SidebarMenuButton>
               </SidebarMenuItem>
                <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Settings">
+                <SidebarMenuButton asChild tooltip="Settings" isActive={pathname.startsWith('/settings')}>
                     <Link href={getSettingsLink()}>
                         <Settings/>
                         <span>Settings</span>

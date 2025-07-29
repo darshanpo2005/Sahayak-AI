@@ -64,7 +64,7 @@ export default function ManagementLoginPage() {
             <Link href="/" className="flex justify-center items-center mb-4 text-primary">
                 <Shield className="w-8 h-8 mr-2" />
             </Link>
-          <CardTitle>Manager Login</CardTitle>
+          <CardTitle className="text-2xl">Manager Login</CardTitle>
           <CardDescription>
             Access the NWCS Internship Portal
           </CardDescription>
