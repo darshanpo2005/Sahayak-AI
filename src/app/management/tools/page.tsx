@@ -12,9 +12,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { getLessonPlan, getQuiz, getAssignment } from "@/lib/actions";
-import type { GenerateLessonPlanAssistanceOutput, GenerateQuizQuestionsOutput, GenerateAssignmentOutput } from "@/lib/actions";
-import { Lightbulb, HelpCircle, BarChart3, Bot, Sparkles, Loader2, CheckCircle2, RefreshCw, ClipboardEdit } from "lucide-react";
+import { getQuiz, getAssignment } from "@/lib/actions";
+import type { GenerateQuizQuestionsOutput, GenerateAssignmentOutput } from "@/lib/actions";
+import { HelpCircle, BarChart3, Bot, Sparkles, Loader2, CheckCircle2, RefreshCw, ClipboardEdit } from "lucide-react";
 import { DashboardPage } from "@/components/layout/dashboard-page";
 import { useToast } from "@/hooks/use-toast";
 import { getStudents, Student, Teacher, getCourses, Course, QuizResult, getQuizResultsForCourse } from "@/lib/services";
@@ -37,10 +37,6 @@ export default function AIToolsPage() {
   const router = useRouter();
   const [session, setSession] = useState<{ user: Teacher; role: 'admin' } | null>(null);
 
-  const [lessonPlan, setLessonPlan] = useState<GenerateLessonPlanAssistanceOutput | null>(null);
-  const [isLessonPlanLoading, setIsLessonPlanLoading] = useState(false);
-  const [lessonPlanError, setLessonPlanError] = useState<string | null>(null);
-  
   const [quiz, setQuiz] = useState<GenerateQuizQuestionsOutput | null>(null);
   const [isQuizLoading, setIsQuizLoading] = useState(false);
   const [quizError, setQuizError] = useState<string | null>(null);
@@ -121,24 +117,6 @@ export default function AIToolsPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progressCourseId]);
-
-  const handleLessonPlanSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLessonPlanLoading(true);
-    setLessonPlan(null);
-    setLessonPlanError(null);
-    const formData = new FormData(e.currentTarget);
-    const subject = formData.get("subject") as string;
-    const gradeLevel = formData.get("gradeLevel") as string;
-    
-    const result = await getLessonPlan({ subject, gradeLevel });
-    if (result.success) {
-      setLessonPlan(result.data);
-    } else {
-      setLessonPlanError(result.error);
-    }
-    setIsLessonPlanLoading(false);
-  };
 
   const handleQuizSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -223,70 +201,12 @@ export default function AIToolsPage() {
 
   return (
     <DashboardPage title="Manager AI Tools" role="Manager">
-      <Tabs defaultValue="lesson-plan">
-        <TabsList className="mb-6 grid grid-cols-2 sm:grid-cols-4 w-full sm:w-auto">
-          <TabsTrigger value="lesson-plan"><Lightbulb className="mr-2 h-4 w-4" />Lesson Plan</TabsTrigger>
+      <Tabs defaultValue="assignments">
+        <TabsList className="mb-6 grid grid-cols-1 sm:grid-cols-3 w-full sm:w-auto">
           <TabsTrigger value="assignments"><ClipboardEdit className="mr-2 h-4 w-4" />Assignments</TabsTrigger>
           <TabsTrigger value="quiz"><HelpCircle className="mr-2 h-4 w-4" />Quiz</TabsTrigger>
           <TabsTrigger value="progress"><BarChart3 className="mr-2 h-4 w-4" />Progress</TabsTrigger>
         </TabsList>
-
-        <TabsContent value="lesson-plan">
-          <div className="grid gap-6 lg:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Lesson Plan Assistance</CardTitle>
-                <CardDescription>Provide a subject and grade level to get an AI-generated lesson plan outline.</CardDescription>
-              </CardHeader>
-              <form onSubmit={handleLessonPlanSubmit}>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="subject">Subject</Label>
-                    <Input id="subject" name="subject" placeholder="e.g., World History" required />
-                  </div>
-                  <div>
-                    <Label htmlFor="gradeLevel">Grade Level</Label>
-                    <Input id="gradeLevel" name="gradeLevel" placeholder="e.g., 9th Grade" required />
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button type="submit" disabled={isLessonPlanLoading} className="w-full">
-                    {isLessonPlanLoading ? (
-                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...</>
-                    ) : (
-                      <><Sparkles className="mr-2 h-4 w-4" /> Generate Outline</>
-                    )}
-                  </Button>
-                </CardFooter>
-              </form>
-            </Card>
-
-            <Card className="flex flex-col">
-              <CardHeader>
-                <CardTitle className="flex items-center"><Bot className="mr-2 h-5 w-5" /> AI Response</CardTitle>
-                <CardDescription>The generated lesson plan outline will appear here.</CardDescription>
-              </CardHeader>
-              <CardContent className="flex-grow">
-                <ScrollArea className="h-[250px] w-full p-4 border rounded-md bg-muted/20">
-                  {isLessonPlanLoading && (
-                    <div className="space-y-4">
-                      <Skeleton className="h-4 w-3/4" />
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-1/2" />
-                    </div>
-                  )}
-                  {lessonPlanError && <p className="text-destructive">{lessonPlanError}</p>}
-                  {lessonPlan ? (
-                    <pre className="whitespace-pre-wrap font-sans text-sm">{lessonPlan.lessonPlanOutline}</pre>
-                  ) : !isLessonPlanLoading && !lessonPlanError && (
-                    <p className="text-muted-foreground">Your generated content will be displayed here.</p>
-                  )}
-                </ScrollArea>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
         
         <TabsContent value="assignments">
           <div className="grid gap-6 lg:grid-cols-2">
