@@ -54,6 +54,7 @@ import type { Notification } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from 'date-fns';
+import Image from "next/image";
 
 
 type Session = {
@@ -161,7 +162,7 @@ export function DashboardPage({
       <Sidebar side="left" collapsible="icon" variant="sidebar">
         <SidebarHeader>
            <div className="flex items-center gap-2 p-2">
-            <Shield className="w-6 h-6 text-primary" />
+            <Image src="/logo.png" alt="NWCS Portal Logo" width={24} height={24} className="w-6 h-6" />
             <span className="font-semibold text-lg whitespace-nowrap text-primary">NWCS Portal</span>
            </div>
         </SidebarHeader>

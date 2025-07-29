@@ -20,8 +20,8 @@ export default function Home() {
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center">
-          <Link href="#" className="flex items-center justify-start">
-            <Shield className="h-6 w-6 mr-2 text-primary" />
+          <Link href="#" className="flex items-center justify-start gap-2">
+            <Image src="/logo.png" alt="NWCS Portal Logo" width={24} height={24} className="h-6 w-6" />
             <span className="font-bold">NWCS Portal</span>
           </Link>
           <nav className="ml-auto flex items-center gap-2">
